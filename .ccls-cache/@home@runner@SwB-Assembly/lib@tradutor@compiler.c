@@ -7,19 +7,17 @@ int function_initialization();
 void process_local_variables();
 void process_instructions();
 void process_attribuition();
+void process_vector_getter();
 
 //Essas structs servem para salvarmos as informacoes necessarias e uteis das nossas variaveis locais para facilitar o uso do registrador da pilha correspondentes a uma variavel.
-typedef struct variables_simple{ //struct para variaveis int (viN).
-	int pile_place, value;
-}variables;
-
-typedef struct variables_array{ //struct para arrays (vaN).
-	int pile_place, size, value;
-}variables_a;
+typedef struct stack_info
+{
+	int offset;
+	unsigned int size;
+} stack_info;
 
 //temos no maximo 5 variaveis locais.
-variables v1[5]; // v1 é dedicado a variaveis que nao sao arrays.
-variables_a v2[5]; // v2 é dedicado a variaveis que sao arrays.
+stack_info stack[5];
 
 // Aqui é onde o processo de compilação de BPL para Assembly ocorre.
 // Todas as funções relacionadas a gerar código Assembly são feitas aqui.
@@ -156,8 +154,44 @@ void process_instructions()
 	while(strncmp(buffer, "end", 3) != 0)
 	{ 
 		if(strncmp(buffer, "vi", 2) == 0) process_atribution();
-		//if(strncmp(buffer, "get", 3) == 0) process_vector_getter();
+		if(strncmp(buffer, "get", 3) == 0) process_vector_getter();
 		//if(strncmp(buffer, "set", 2) == 0) process_vector_setter();
 		read_line();
+	}
+}
+
+void process_vector_getter()
+{
+	// Buffer atual: "get CaN index ciN to CiN"
+
+	char vec_type;	// variável local ou parâmetro
+	int vec_index;	// índice do vetor
+
+	int vec_offset;	// A posição a ser acessada
+
+	char target_type;	// variável local ou parâmetro
+	int target_index;	// índice do target
+
+	sscanf(buffer, "get %ca%d index ci%d to %ci%d", 
+		&vec_type, &vec_index, vec_offset,
+		&target_type, &target_index);
+
+	char register_pointer[3];
+
+	if(vec_type == "v")
+	{
+		register_pointer = "rbp";
+	}
+	else	// vec_type = "p"
+	{
+		if(vec_index == 1)
+			register_pointer = "rdi";
+		else if(vec_index == 2)
+			register_pointer = "rsi";
+		else	// vec_index = 3
+			register_pointer = "rdx";
+
+		vec_offset *= 4;
+		
 	}
 }
