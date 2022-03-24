@@ -1,0 +1,59 @@
+f1:
+	// Inicializar a pilha
+	pushq %rbp
+	movq %rsp, %rbp
+  subq $16, %rsp
+
+  movl %edi, -4(%rbp)
+	// return ci1024
+	movl $1024, %eax
+	leave
+	ret
+
+f2:
+	// Inicializar a pilha
+	pushq %rbp
+	movq %rsp, %rbp
+
+	// Variáveis locais
+	// -4(%rbp) -> vi1
+	subq $16, %rsp
+
+	// vi1 = pi1 + ci1
+	movl -4(%rbp), %eax
+	addl %edi, %eax
+	movl %eax, -4(%rbp)
+
+	//return vi1
+	movl -4(%rbp), %eax
+
+	leave
+	ret
+
+f3:
+	// Inicializar a pilha
+	pushq %rbp
+	movq %rsp, %rbp
+
+	// Variáveis locais
+	// -4(%rbp) -> vi1
+	subq $16, %rsp
+
+	// get pa1 index ci1 to vi1
+	leaq (%rdi), %rcx			// rcx = &rdi       	&pa1[0]
+	movq $1, %rdx				// rdx = 1				1
+	imulq $4, %rdx				// rdx *= 4				[1]
+	addq %rdx, %rcx				// rcx += rdx			&pa1[1]
+	movq (%rcx), %rdx			// rdx = *rcx			pa1[1]
+	movq %rdx, -4(%rbp)			// vi1 = rcx			pa1[1]
+
+	// vi1 = vi1 + ci1
+	movl -4(%rbp), %eax
+	addl $1, %eax
+	movl %eax, -4(%rbp)
+
+	// return vi1
+	movl -4(%rbp), %eax
+
+	leave
+	ret
