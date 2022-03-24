@@ -30,17 +30,34 @@ variables_a v2[5]; // v2 é dedicado a variaveis que sao arrays.
 
 void process_attribution()
 {
-  matches = sscanf(buffer, "vi%d = %ci%d %c %ci%d", &main_variable, &variable_type[0], &variable_number[0], &operation, &variable_type[1], &variable_number[1]);
-		// Caso de atribuicao.
-		if(matches == 3){
-			if(variable_type[0] == 'c') printf("    movl $%d, %d(%%rbp)\n", variable_number[0], v1[main_variable-1].pile_place);
-			if(variable_type[0] == 'v') printf("    movl %d(%%rbp), %d(%%rbp)\n", v1[variable_number[0]-1].pile_place, v1[main_variable-1].pile_place);
-			if(variable_type[0] == 'p'){
-				if(variable_number[0] == 1) printf("    movl %%edi, %d(%%rbp)\n", v1[main_variable-1].pile_place);
-				else if(variable_number[0] == 2) printf("    movl %%esi, %d(%%rbp)\n", v1[main_variable-1].pile_place);
-				else printf("    movl %%edx, %d(%%rbp)\n", v1[main_variable-1].pile_place);
-			}
+	// Processar as operações é um simples caso de casar a string de formatação.
+	// Ao chegar no final da função, pare.
+
+
+	int matches = 0; //Numero de acertos na funcao strncmp.
+	char operation; // tipo da operaçao.
+	int main_variable; // Numero da vaariavel a ser alterada.
+	char variable_type[2]; // numero das variaveis usadas na operacao.
+	int variable_number[2]; // tipo da variavel utilizada.
+	
+  	matches = sscanf(buffer, "vi%d = %ci%d %c %ci%d", &main_variable, &variable_type[0], &variable_number[0], &operation, &variable_type[1], &variable_number[1]);
+	// Caso de atribuicao.
+	if(matches == 3)
+	{
+		if(variable_type[0] == 'c') 
+			printf("    movl $%d, %d(%%rbp)\n", variable_number[0], v1[main_variable-1].pile_place);
+		if(variable_type[0] == 'v') 
+			printf("    movl %d(%%rbp), %d(%%rbp)\n", v1[variable_number[0]-1].pile_place, v1[main_variable-1].pile_place);
+		if(variable_type[0] == 'p')
+		{
+			if(variable_number[0] == 1) 
+				printf("    movl %%edi, %d(%%rbp)\n", v1[main_variable-1].pile_place);
+			else if(variable_number[0] == 2) 
+				printf("    movl %%esi, %d(%%rbp)\n", v1[main_variable-1].pile_place);
+			else 
+				printf("    movl %%edx, %d(%%rbp)\n", v1[main_variable-1].pile_place);
 		}
+	}
 }
 
 void compile_function()
@@ -144,20 +161,10 @@ void process_instructions()
 	read_line();	// Buffer atual: ??? ("end" ou instrução)
 
 	// Enquanto não encontrarmos o final da função, iremos processar as operações.
-	// Processar as operações é um simples caso de casar a string de formatação.
-	// Ao chegar no final da função, pare.
-
-
-	int matches = 0; //Numero de acertos na funcao strncmp.
-	char operation; // tipo da operaçao.
-	int main_variable; // Numero da vaariavel a ser alterada.
-	char variable_type[2]; // numero das variaveis usadas na operacao.
-	int variable_number[2]; // tipo da variavel utilizada.
+	
 	while(strncmp(buffer, "end", 3) != 0)
 	{ 
-		if(strncmp(buffer, "vi", 2) == 0) process_atribution();
-		//if(strncmp(buffer, "get", 3) == 0) process_vector_getter();
-		//if(strncmp(buffer, "set", 2) == 0) process_vector_setter();
+		if(strncmp(buffer, "vi", 2) == 0) process_attribution();
 		read_line();
 	}
 }
