@@ -9,17 +9,14 @@ void process_instructions();
 void process_attribuition();
 
 //Essas structs servem para salvarmos as informacoes necessarias e uteis das nossas variaveis locais para facilitar o uso do registrador da pilha correspondentes a uma variavel.
-typedef struct variables_simple{ //struct para variaveis int (viN).
-	int pile_place, value;
-}variables;
-
-typedef struct variables_array{ //struct para arrays (vaN).
-	int pile_place, size, value;
-}variables_a;
+typedef struct stack_info
+{
+	int offset;
+	unsigned int size;
+} stack_info;
 
 //temos no maximo 5 variaveis locais.
-variables v1[5]; // v1 é dedicado a variaveis que nao sao arrays.
-variables_a v2[5]; // v2 é dedicado a variaveis que sao arrays.
+stack_info stack[5];
 
 // Aqui é onde o processo de compilação de BPL para Assembly ocorre.
 // Todas as funções relacionadas a gerar código Assembly são feitas aqui.
