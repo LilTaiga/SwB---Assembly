@@ -7,7 +7,7 @@ int function_initialization();
 void process_local_variables();
 void process_instructions();
 void process_attribuition();
-void process_vector_getter();a
+void process_vector_getter();
 
 //Essas structs servem para salvarmos as informacoes necessarias e uteis das nossas variaveis locais para facilitar o uso do registrador da pilha correspondentes a uma variavel.
 typedef struct stack_info
