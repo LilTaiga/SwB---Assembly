@@ -168,7 +168,7 @@ void process_vector_getter()
 		vec_offset *= 4;
 	}
 
-	printf("    movl %d(%%%s), ", vec_offset, register_pointer);
+	printf("    movl %d(%%%s), %%eax\n", vec_offset, register_pointer);
 
 	// TODO: Calcular a posição da variável destino
 	if(target_type == 'p')
@@ -188,7 +188,7 @@ void process_vector_getter()
 	}
 	else	// target_type == 'v'
 	{
-		printf("-%d(%%rbp)", stack[target_index].offset);
+		printf("    movl %%eax, -%d(%%rbp)\n", stack[target_index].offset);
 	}
 
 

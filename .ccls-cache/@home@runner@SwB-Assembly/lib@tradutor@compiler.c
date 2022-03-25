@@ -148,22 +148,49 @@ void process_vector_getter()
 	if(vec_type == 'v')
 	{
 		strcpy(register_pointer, "rbp");
-		// TODO: Calcular a posição do ponteiro na pilha.
+		vec_offset = stack[vec_offset - 1].offset;
 	}
 	else	// vec_type = "p"
 	{
-		if(vec_index == 1)
-			strcpy(register_pointer, "edi");
-		else if(vec_index == 2)
-			strcpy(register_pointer, "esi");
-		else	// vec_index = 3
-			strcpy(register_pointer, "edx");
+		switch (vec_index)
+		{
+			case 1:
+				strcpy(register_pointer, "edi");
+				break;
+			case 2:
+				strcpy(register_pointer, "esi");
+				break;
+			case 3:
+				strcpy(register_pointer, "edx");
+				break;
+		}
 
 		vec_offset *= 4;
-
-		printf("    movl %d(%%%s), ", vec_offset, register_pointer);
 	}
 
+	printf("    movl %d(%%%s), %%eax\n", vec_offset, register_pointer);
+
 	// TODO: Calcular a posição da variável destino
+	if(target_type == 'p')
+	{
+		switch (target_index)
+		{
+			case 1:
+				printf("%%edi");
+				break;
+			case 2:
+				printf("%%esi");
+				break;
+			case 3:
+				printf("%%edx");
+				break;
+		}
+	}
+	else	// target_type == 'v'
+	{
+		printf("    movl %%eax, -%d(%%rbp)\n", stack[target_index].offset);
+	}
+
+
 	// TODO: Atualizar o valor da variável destino
 }
