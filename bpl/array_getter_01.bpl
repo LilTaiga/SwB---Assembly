@@ -14,7 +14,7 @@ end
 function f16
 def
 vet va1 size ci5
-vet va2 size c10
+vet va2 size ci10
 var vi3
 var vi4
 enddef

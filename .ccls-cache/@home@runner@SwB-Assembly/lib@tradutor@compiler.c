@@ -81,9 +81,12 @@ void process_local_variables()
 		{
 			sscanf(buffer, "var vi%d", &index);
 			
-			required_bytes = 4;
+			required_bytes += 4;
 
-			stack[index-1].offset = required_bytes * (-1); 
+			stack[index-1].offset = required_bytes * (-1);
+
+			printf("        #vi%d.offset = %d\n", index, stack[index-1].offset);
+			
 			continue;
 		}
 		if(strncmp(buffer, "vet", 3) == 0)
@@ -94,10 +97,12 @@ void process_local_variables()
 			required_bytes += 4 * vector_size;
 
 			stack[index-1].size = vector_size;
-			stack[index-1].offset = required_bytes * (-1);
+			stack[index-1].offset = (required_bytes) * (-1);
+
+			printf("        #va%d.offset = %d\n", index, stack[index-1].offset);
+			continue;
 		}
-
-
+		
 	} while(strncmp(buffer, "enddef", 6) != 0);
 
 	// Agora que sabemos quantos bytes precisamos, hora de alocar a pilha.
@@ -143,12 +148,19 @@ void process_vector_getter()
 		&vec_type, &vec_index, &vec_offset,
 		&target_type, &target_index);
 
+	printf("       #Acessando array.\n");
+	printf("       #Array: %ca%d\n", vec_type, vec_index);
+	printf("       #Index: %d\n", vec_offset);
+	printf("       #Destino: %ci%d\n", target_type, target_index);
+
 	char register_pointer[4];
+	int stack_offset;
 
 	if(vec_type == 'v')
 	{
 		strcpy(register_pointer, "rbp");
-		vec_offset = stack[vec_offset - 1].offset;
+		stack_offset = stack[vec_index - 1].offset;	// vec_offset = &va
+		stack_offset += 4 * vec_offset;
 	}
 	else	// vec_type = "p"
 	{
@@ -165,32 +177,36 @@ void process_vector_getter()
 				break;
 		}
 
-		vec_offset *= 4;
+		//vec_offset *= 4;
 	}
 
-	printf("    movl %d(%%%s), %%eax\n", vec_offset, register_pointer);
+	printf("    movl %d(%%%s), %%eax\n", stack_offset, register_pointer);
 
-	// TODO: Calcular a posição da variável destino
+	char target_register[4];
+	int target_offset;
+	
 	if(target_type == 'p')
 	{
-		switch (target_index)
+		switch (target_type)
 		{
 			case 1:
-				printf("%%edi");
+				strcpy(target_register, "edi");
 				break;
 			case 2:
-				printf("%%esi");
+				strcpy(target_register, "esi");
 				break;
 			case 3:
-				printf("%%edx");
+				strcpy(target_register, "edx");
 				break;
 		}
+
+		target_offset = target_index * 4;
 	}
 	else	// target_type == 'v'
 	{
-		printf("    movl %%eax, -%d(%%rbp)\n", stack[target_index].offset);
+		strcpy(target_register, "rbp");
+		target_offset = stack[target_index - 1].offset;
 	}
 
-
-	// TODO: Atualizar o valor da variável destino
+	printf("    movl %%eax, %d(%%%s)\n", target_offset, target_register);
 }
