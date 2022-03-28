@@ -4,7 +4,7 @@
 #include "base.h"  // Aqui estão definidos o buffer e o read_line()
 
 int function_initialization();
-void process_local_variables();
+void process_local_variables(int a);
 void process_instructions();
 void process_attribuition();
  
@@ -17,6 +17,8 @@ typedef struct stack_info
 
 //temos no maximo 5 variaveis locais.
 stack_info stack[5];
+//temos tbm 3 parametros que podem vir com a funcao
+stack_info parameter[3];
 
 // Aqui é onde o processo de compilação de BPL para Assembly ocorre.
 // Todas as funções relacionadas a gerar código Assembly são feitas aqui.
@@ -42,17 +44,31 @@ void process_attribution()
 	if(matches == 3){
 		if(variable_type[0] == 'c') 
 			printf("    movl $%d, %d(%%rbp)\n", variable_number[0], stack[main_variable-1].offset);
-		if(variable_type[0] == 'v') 
-			printf("    movl %d(%%rbp), %d(%%rbp)\n", stack[variable_number[0]-1].offset, stack[main_variable-1].offset);
+		if(variable_type[0] == 'v'){
+			printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[0]-1].offset);
+      printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+    }
 		if(variable_type[0] == 'p'){
 			if(variable_number[0] == 1) 
-				printf("    movl %%edi, %d(%%rbp)\n", stack[main_variable-1].offset);
+        printf("    movl %%edi, %d(%%rbp)\n", stack[main_variable-1].offset);
 			else if(variable_number[0] == 2) 
-				printf("    movl %%esi, %d(%%rbp)\n", stack[main_variable-1].offset);
+        printf("    movl %%esi, %d(%%rbp)\n", stack[main_variable-1].offset);
 			else 
-				printf("    movl %%edx, %d(%%rbp)\n", stack[main_variable-1].offset);
+        printf("    movl %%edx, %d(%%rbp)\n", stack[main_variable-1].offset);
 		}
 	}
+  if(operation == '+'){
+    if(variable_type[0] == 'c'){
+      if(variable_type[1] == 'c'){
+        printf("    movl $%d, %%eax\n", variable_number[0]);
+        printf("    addl $%d, %%eax\n", variable_number[1]);
+        printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+      }
+      if(variable_type[1] == 'v'){
+        printf("    movl $%d, %%eax\n", variable_number[0]);
+      }
+    }
+  }
 }
 
 void compile_function()
@@ -70,7 +86,7 @@ void compile_function()
 
 	// Processar as variáveis locais
 
-	process_local_variables();
+	process_local_variables(parameters);
 	
 	// Processar as instruções
 
@@ -90,16 +106,21 @@ int function_initialization()
 	int matches = sscanf(buffer, "function f%d p%c1 p%c2 p%c3", &function_number,
 						 &parameter_types[0], &parameter_types[1], &parameter_types[2]);
 
+  for(int i = 0; i<matches; i++){
+    if(parameter_types[i] == 'i') parameter[i].offset = 4;
+    if(parameter_types[i] == 'a') parameter[i].offset = 8;
+  }
+
 	// Sabemos que pelo menos o primeiro %d foi lido com sucesso.
 	// Para descobrir a quantidade de parâmetros. Devemos olhar quantos matches foram feitos.
 
 	printf(".globl f%d\n", function_number);
 	printf("f%d:\n", function_number);
 
-	return matches - 1;
+	return matches;
 }
 
-void process_local_variables()
+void process_local_variables(int a)
 {
 	// Buffer atual: "function fN {pX1 {pX2 {pX3}}}"
 
@@ -120,6 +141,7 @@ void process_local_variables()
 			required_bytes += 4;
 
 			stack[index-1].offset = required_bytes * (-1); 
+      printf("#vi%d: %d\n", index, stack[index-1].offset);
 			continue;
 		}
 		if(strncmp(buffer, "vet", 3) == 0)
@@ -131,10 +153,29 @@ void process_local_variables()
 
 			stack[index-1].size = vector_size;
 			stack[index-1].offset = required_bytes * (-1);
+      printf("#va%d: %d\n", index, stack[index-1].offset);
 		}
 
 
 	} while(strncmp(buffer, "enddef", 6) != 0);
+
+  //Adicionando os parametros à pilha em caso de chamada de funcoes 
+  for(int i = 0; i < a; i++){
+    //Para paremetros do tipo inteiro
+    if(parameter[i].offset == 4){
+      required_bytes += 4;
+      parameter[i].offset = required_bytes * (-1);
+      printf("#pi%d: %d\n", i+1, parameter[i].offset);
+    }else if(parameter[i].offset == 8){ //Para parametros ponteiros
+      required_bytes += 4;
+
+      //É necessario garantir alinhamento do tipo ponteiro com 8
+      while(required_bytes%8 != 0)
+        required_bytes += 4;
+      parameter[i].offset = required_bytes * (-1);
+      printf("#pa%d: %d\n", i+1, parameter[i].offset);
+    }
+  }
 
 	// Agora que sabemos quantos bytes precisamos, hora de alocar a pilha.
 	// Lembrando que a pilha deve sempre ser alocada em múltiplos de 16
