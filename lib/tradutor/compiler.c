@@ -42,13 +42,16 @@ void process_attribution()
   	matches = sscanf(buffer, "vi%d = %ci%d %c %ci%d", &main_variable, &variable_type[0], &variable_number[0], &operation, &variable_type[1], &variable_number[1]);
 	// Caso de atribuicao.
 	if(matches == 3){
-		if(variable_type[0] == 'c') 
+		
+    if(variable_type[0] == 'c') 
 			printf("    movl $%d, %d(%%rbp)\n", variable_number[0], stack[main_variable-1].offset);
-		if(variable_type[0] == 'v'){
+		
+    if(variable_type[0] == 'v'){
 			printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[0]-1].offset);
       printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
     }
-		if(variable_type[0] == 'p'){
+		
+    if(variable_type[0] == 'p'){
 			if(variable_number[0] == 1) 
         printf("    movl %%edi, %d(%%rbp)\n", stack[main_variable-1].offset);
 			else if(variable_number[0] == 2) 
@@ -57,16 +60,175 @@ void process_attribution()
         printf("    movl %%edx, %d(%%rbp)\n", stack[main_variable-1].offset);
 		}
 	}
-  if(operation == '+'){
+  
+  if(operation != ' '){
+    char op[6];
+    if(operation == '+')
+      strcpy(op, "addl");
+    if(operation == '-')
+      strcpy(op, "subl");
+    if(operation == '*')
+      strcpy(op, "imull");
+    
     if(variable_type[0] == 'c'){
+     
       if(variable_type[1] == 'c'){
         printf("    movl $%d, %%eax\n", variable_number[0]);
-        printf("    addl $%d, %%eax\n", variable_number[1]);
+        printf("    %s $%d, %%eax\n", op, variable_number[1]);
         printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
       }
+      
       if(variable_type[1] == 'v'){
-        printf("    movl $%d, %%eax\n", variable_number[0]);
+        printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[1]-1].offset);
+        printf("    %s $%d, %%eax\n", op, variable_number[0]);
+        printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
       }
+
+      if(variable_type[1] == 'p'){
+        if(variable_number[1] == 1){
+          printf("    movl $%d, %%eax\n", variable_number[0]);
+          printf("    %s %%edi, %%eax\n", op);
+          printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+        }
+			  else if(variable_number[1] == 2){
+          printf("    movl $%d, %%eax\n", variable_number[0]);
+          printf("    %s %%esi, %%eax\n", op);
+          printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+        }
+			  else{
+          printf("    movl $%d, %%eax\n", variable_number[0]);
+          printf("    %s %%edx, %%eax\n", op);
+          printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+        }  
+      }
+      
+    }
+
+    if(variable_type[0] == 'v'){
+
+      if(variable_type[1] == 'c'){
+        printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[0]-1].offset);
+        printf("    %s $%d, %%eax\n", op, variable_number[1]);
+        printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+      }
+      
+      if(variable_type[1] == 'v'){
+        printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[0]-1].offset);
+        printf("    %s %d(%%rbp), %%eax\n", op, stack[variable_number[1]-1].offset);
+        printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+      }
+
+      if(variable_type[1] == 'p'){
+        if(variable_number[1] == 1){
+          printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[0]-1].offset);
+          printf("    %s %%edi, %%eax\n", op);
+          printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+        }
+			  else if(variable_number[1] == 2){
+          printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[0]-1].offset);
+          printf("    %s %%esi, %%eax\n", op);
+          printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+        }
+			  else{
+          printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[0]-1].offset);
+          printf("    %s %%edx, %%eax\n", op);
+          printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+        }  
+      }
+    }
+
+    if(variable_type[0] == 'p'){
+      if(variable_number[0] == 1){ 
+        if(variable_type[1] == 'c'){
+          printf("    movl $%d, %%eax\n", variable_number[1]);
+          printf("    %s %%edi, %%eax\n", op);
+          printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+        }
+          
+        if(variable_type[1] == 'v'){
+          printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[1]-1].offset);
+          printf("    %s %%edi, %%eax\n", op);
+          printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+        }
+        if(variable_type[1] == 'p'){
+          if(variable_number[1] == 1){
+            printf("    movl %%edi, %%eax\n");
+            printf("    %s %%edi, %%eax\n", op);
+            printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+          }
+  			  else if(variable_number[1] == 2){
+            printf("    movl %%edi, %%eax\n");
+            printf("    %s %%esi, %%eax\n", op);
+            printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+          }
+  			  else{
+            printf("    movl %%edi, %%eax\n");
+            printf("    %s %%edx, %%eax\n", op);
+            printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+          }
+        }
+      }
+			else if(variable_number[0] == 2){ 
+         if(variable_type[1] == 'c'){
+          printf("    movl $%d, %%eax\n", variable_number[1]);
+          printf("    %s %%esi, %%eax\n", op);
+          printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+        }
+          
+        if(variable_type[1] == 'v'){
+          printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[1]-1].offset);
+          printf("    %s %%esi, %%eax\n", op);
+          printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+        }
+        if(variable_type[1] == 'p'){
+          if(variable_number[1] == 1){
+            printf("    movl %%esi, %%eax\n");
+            printf("    %s %%edi, %%eax\n", op);
+            printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+          }
+  			  else if(variable_number[1] == 2){
+            printf("    movl %%esi, %%eax\n");
+            printf("    %s %%esi, %%eax\n", op);
+            printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+          }
+  			  else{
+            printf("    movl %%esi, %%eax\n");
+            printf("    %s %%edx, %%eax\n", op);
+            printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+          }
+        }
+      }
+        
+			else{
+        if(variable_type[1] == 'c'){
+          printf("    movl $%d, %%eax\n", variable_number[1]);
+          printf("    %s %%edx, %%eax\n", op);
+          printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+        }
+          
+        if(variable_type[1] == 'v'){
+          printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[1]-1].offset);
+          printf("    %s %%edx, %%eax\n", op);
+          printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+        }
+        if(variable_type[1] == 'p'){
+          if(variable_number[1] == 1){
+            printf("    movl %%edx, %%eax\n");
+            printf("    %s %%edi, %%eax\n", op);
+            printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+          }
+  			  else if(variable_number[1] == 2){
+            printf("    movl %%edx, %%eax\n");
+            printf("    %s %%esi, %%eax\n", op);
+            printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+          }
+  			  else{
+            printf("    movl %%edx, %%eax\n");
+            printf("    %s %%edx, %%eax\n", op);
+            printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable-1].offset);
+          }
+        }
+      } 
     }
   }
 }

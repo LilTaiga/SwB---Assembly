@@ -6,7 +6,9 @@ f1:
 #pi1: -8
     subq $16, %rsp
 
-    movl %edi, -4(%rbp)
+    movl -4(%rbp), %eax
+    subl $5, %eax
+    movl %eax, -4(%rbp)
     leave
     ret
 
@@ -18,7 +20,7 @@ f2:
 #pi1: -8
     subq $16, %rsp
 
-    addl $1, -4(%rbp)
+    movl %edi, -4(%rbp)
     leave
     ret
 
@@ -31,7 +33,9 @@ f3:
 #pi2: -12
     subq $16, %rsp
 
-    addl $1, -4(%rbp)
+    movl -4(%rbp), %eax
+    addl $1, %eax
+    movl %eax, -4(%rbp)
     leave
     ret
 
