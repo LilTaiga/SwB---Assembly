@@ -39,20 +39,18 @@ void process_attribution()
 	
   	matches = sscanf(buffer, "vi%d = %ci%d %c %ci%d", &main_variable, &variable_type[0], &variable_number[0], &operation, &variable_type[1], &variable_number[1]);
 	// Caso de atribuicao.
-	if(matches == 3)
-	{
+	if(matches == 3){
 		if(variable_type[0] == 'c') 
-			printf("    movl $%d, %d(%%rbp)\n", variable_number[0], v1[main_variable-1].pile_place);
+			printf("    movl $%d, %d(%%rbp)\n", variable_number[0], stack[main_variable-1].offset);
 		if(variable_type[0] == 'v') 
-			printf("    movl %d(%%rbp), %d(%%rbp)\n", v1[variable_number[0]-1].pile_place, v1[main_variable-1].pile_place);
-		if(variable_type[0] == 'p')
-		{
+			printf("    movl %d(%%rbp), %d(%%rbp)\n", stack[variable_number[0]-1].offset, stack[main_variable-1].offset);
+		if(variable_type[0] == 'p'){
 			if(variable_number[0] == 1) 
-				printf("    movl %%edi, %d(%%rbp)\n", v1[main_variable-1].pile_place);
+				printf("    movl %%edi, %d(%%rbp)\n", stack[main_variable-1].offset);
 			else if(variable_number[0] == 2) 
-				printf("    movl %%esi, %d(%%rbp)\n", v1[main_variable-1].pile_place);
+				printf("    movl %%esi, %d(%%rbp)\n", stack[main_variable-1].offset);
 			else 
-				printf("    movl %%edx, %d(%%rbp)\n", v1[main_variable-1].pile_place);
+				printf("    movl %%edx, %d(%%rbp)\n", stack[main_variable-1].offset);
 		}
 	}
 }
@@ -121,7 +119,7 @@ void process_local_variables()
 			
 			required_bytes += 4;
 
-			v1[index-1].pile_place = required_bytes * (-1); 
+			stack[index-1].offset = required_bytes * (-1); 
 			continue;
 		}
 		if(strncmp(buffer, "vet", 3) == 0)
@@ -131,8 +129,8 @@ void process_local_variables()
 
 			required_bytes += 4 * vector_size;
 
-			v2[index-1].size = vector_size;
-			v2[index-1].pile_place = required_bytes * (-1);
+			stack[index-1].size = vector_size;
+			stack[index-1].offset = required_bytes * (-1);
 		}
 
 
