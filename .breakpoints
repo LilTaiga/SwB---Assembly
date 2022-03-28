@@ -1,18 +1,3 @@
 {
-  "files": {
-    "lib/tradutor/compiler.c": [
-      {
-        "id": "d47d53dc-6311-4fd5-ad1a-99f86f6e86ac",
-        "line": 23,
-        "version": 4186,
-        "index": 599
-      },
-      {
-        "id": "26229e04-59e3-4a21-b835-9bfbab22e5de",
-        "line": 77,
-        "version": 4186,
-        "index": 1799
-      }
-    ]
-  }
+  "files": {}
 }

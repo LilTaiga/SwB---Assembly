@@ -1,0 +1,55 @@
+f60:
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $16, %rsp
+
+    // -4(%rbp) -> vi1
+
+    //get pa1 index ci2 to vi1
+    movl 8(%esi), -4(%rbp)
+
+    //get pa1 index ci1 to pi2
+    movl 4(%esi), %edi
+
+    //get pa1 index ci4 to pi2
+    mov 16(%esi), %edi
+
+    //get pa1 index ci3 to vi1
+    mov 12(%esi), -4(%rbp)
+
+    leave
+    ret
+
+
+
+f63:
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $16, %rsp
+
+    // -4(%rbp) -> vi1
+    // -8(%rbp) -> vi2
+
+    //get pa2 index ci100 to pi1
+    movl 400(%rsi), %edi
+
+    //get pa2 index ci50 to vi1
+    movl 200(%rsi), -4(%rbp)
+
+    //get pa2 index ci25 to vi2
+    movl 100(%rsi), -8(%rbp)
+
+    //get pa3 index ci2 to vi2
+    movl 8(%rdx), -8(%rbp)
+ 
+    //get pa3 index ci5 to vi1
+    movl 20(%rdx), -4(%rbp)
+ 
+    //get pa3 index ci9 to pi1
+    movl 36(%rdx), %esi
+
+    //return ci42
+    movl $42, %eax
+
+    leave
+    ret

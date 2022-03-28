@@ -167,17 +167,17 @@ void process_vector_getter()
 		switch (vec_index)
 		{
 			case 1:
-				strcpy(register_pointer, "edi");
+				strcpy(register_pointer, "rdi");
 				break;
 			case 2:
-				strcpy(register_pointer, "esi");
+				strcpy(register_pointer, "rsi");
 				break;
 			case 3:
-				strcpy(register_pointer, "edx");
+				strcpy(register_pointer, "rdx");
 				break;
 		}
 
-		//vec_offset *= 4;
+		stack_offset = vec_offset * 4;
 	}
 
 	printf("    movl %d(%%%s), %%eax\n", stack_offset, register_pointer);
@@ -187,7 +187,7 @@ void process_vector_getter()
 	
 	if(target_type == 'p')
 	{
-		switch (target_type)
+		switch (target_index)
 		{
 			case 1:
 				strcpy(target_register, "edi");
@@ -200,13 +200,12 @@ void process_vector_getter()
 				break;
 		}
 
-		target_offset = target_index * 4;
+		printf("    movl %%eax, %%%s\n", target_register);
 	}
 	else	// target_type == 'v'
 	{
 		strcpy(target_register, "rbp");
 		target_offset = stack[target_index - 1].offset;
+		printf("    movl %%eax, %d(%%%s)\n", target_offset, target_register);
 	}
-
-	printf("    movl %%eax, %d(%%%s)\n", target_offset, target_register);
 }
