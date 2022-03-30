@@ -1,3 +1,4 @@
+here
 .globl f60
 f60:
     pushq %rbp
@@ -35,6 +36,9 @@ f60:
        #Valor: ci55
     movl $55, %eax
     movl %eax, 0(%rdi)
+        #Retornando...
+        #Valor de retorno: ci2
+    movl $2, %eax
     leave
     ret
 
@@ -94,6 +98,9 @@ f63:
        #Valor: ci123456
     movl $123456, %eax
     movl %eax, 28(%rdx)
+        #Retornando...
+        #Valor de retorno: ci42
+    movl $42, %eax
     leave
     ret
 

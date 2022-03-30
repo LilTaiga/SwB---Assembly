@@ -9,6 +9,7 @@ void process_instructions();
 void process_attribuition();
 void process_vector_getter();
 void process_vector_setter();
+void process_return();
 
 //Essas structs servem para salvarmos as informacoes necessarias e uteis das nossas variaveis locais para facilitar o uso do registrador da pilha correspondentes a uma variavel.
 typedef struct stack_info
@@ -26,6 +27,7 @@ void compile_function()
 	// Primeiro parâmetro: %di
 	// Segundo parâmetro: %si
 	// Terceiro parâmetro: %dx
+	
 	int parameters = function_initialization();
 	
 	// Inicializar a pilha
@@ -54,6 +56,7 @@ int function_initialization()
 
 	int matches = sscanf(buffer, "function f%d p%c1 p%c2 p%c3", &function_number,
 						 &parameter_types[0], &parameter_types[1], &parameter_types[2]);
+
 
 	// Sabemos que pelo menos o primeiro %d foi lido com sucesso.
 	// Para descobrir a quantidade de parâmetros. Devemos olhar quantos matches foram feitos.
@@ -129,6 +132,7 @@ void process_instructions()
 	{
 		if(strncmp(buffer, "get", 3) == 0) process_vector_getter();
 		if(strncmp(buffer, "set", 2) == 0) process_vector_setter();
+		if(strncmp(buffer, "return", 6) == 0) process_return();
 		read_line();
 	}
 }
@@ -291,4 +295,36 @@ void process_vector_setter()
 	}
 
 	printf("    movl %%eax, %d(%%%s)\n", stack_offset, register_pointer);
+}
+
+void process_return()
+{
+	// Buffer atual: "return CiN"
+
+	char return_type;
+	int return_value;
+	
+	sscanf(buffer, "return %ci%d", &return_type, &return_value);
+	printf("        #Retornando...\n");
+	printf("        #Valor de retorno: %ci%d\n", return_type, return_value);
+	
+	if(return_type == 'c')
+		printf("    movl $%d, %%eax\n", return_value);
+	else if(return_type == 'p')
+	{
+		char return_register[4];
+
+		switch(return_value)
+		{
+			case 1: strcpy(return_register, "edi"); break;
+			case 2: strcpy(return_register, "esi"); break;	
+			case 3: strcpy(return_register, "edx"); break;	
+		}
+
+		printf("    movl %%%s, %%eax\n", return_register);
+	}
+	else	// return_type == 'v'
+	{
+		printf("    movl %d(%%rbp), %%eax\n", stack[return_value - 1].offset);
+	}
 }
