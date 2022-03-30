@@ -1,0 +1,31 @@
+f24:
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $32, %rsp
+
+    // -20(%rbp) -> va1
+    // -20(%rbp) -> va1[0]
+    // -16(%rbp) -> va1[1]
+    // -12(%rbp) -> va1[2]
+    //  -8(%rbp) -> va1[3]
+    //  -4(%rbp) -> va1[4]
+
+    // -24(%rbp) -> vi2
+
+    //set va1 index ci2 with vi2
+    movl -24(%rbp), %eax
+    movl %eax, -12(%rbp)
+
+    //set va1 index ci0 with ci7
+    movl $7, %eax
+    movl %eax, -20(%rbp)
+
+    //set va1 index ci4 with ci-5
+    movl $-5, %eax
+    movl %eax, -4(%rbp)
+
+    //return ci0
+    movl $0, %eax
+
+    leave
+    ret

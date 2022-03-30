@@ -1,0 +1,99 @@
+f29:
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $32, %rsp
+    
+    // -20(%rbp) -> va1
+    // -20(%rbp) -> va1[0]
+    // -16(%rbp) -> va1[1]
+    // -12(%rbp) -> va1[2]
+    //  -8(%rbp) -> va1[3]
+    //  -4(%rbp) -> va1[4]
+
+    //set va1 index ci0 with pi1
+    movl %edi, %eax
+    movl %eax, -20(%rbp)
+
+    //set va1 index ci3 with ci24
+    movl $24, %eax
+    movl %eax, -8(%rbp)
+
+    //set va1 index ci2 with pi1
+    movl %edi, %eax
+    movl %eax, -12(%rbp)
+
+    //return ci0
+    movl $0, %eax
+
+    leave
+    ret
+
+
+
+f33:
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $112, %rsp
+
+    // -28(%rbp) -> va1
+    // -28(%rbp) -> va1[0]
+    // -24(%rbp) -> va1[1]
+    // -20(%rbp) -> va1[2]
+    // -16(%rbp) -> va1[3]
+    // -12(%rbp) -> va1[4]
+    //  -8(%rbp) -> va1[5]
+    //  -4(%rbp) -> va1[6]
+
+    // -64(%rbp) -> va2
+    // -64(%rbp) -> va2[0]
+    // -60(%rbp) -> va2[1]
+    // -56(%rbp) -> va2[2]
+    // -52(%rbp) -> va2[3]
+    // -48(%rbp) -> va2[4]
+    // -44(%rbp) -> va2[5]
+    // -40(%rbp) -> va2[6]
+    // -36(%rbp) -> va2[7]
+    // -32(%rbp) -> va2[8]
+
+    // -108(%rbp) -> va3
+    // -108(%rbp) -> va3[0]
+    // -104(%rbp) -> va3[1]
+    // -100(%rbp) -> va3[2]
+    //  -96(%rbp) -> va3[3]
+    //  -92(%rbp) -> va3[4]
+    //  -88(%rbp) -> va3[5]
+    //  -84(%rbp) -> va3[6]
+    //  -80(%rbp) -> va3[7]
+    //  -76(%rbp) -> va3[8]
+    //  -72(%rbp) -> va3[9]
+    //  -68(%rbp) -> va3[10]
+
+    // set va1 index ci6 with pi1
+    movl %edi, %eax
+    movl %eax, -4(%rbp)
+
+    //set va1 index ci0 with ci1
+    movl $1, %eax
+    movl %eax, -28(%rbp)
+
+    //set va2 index ci8 with pi2
+    movl %esi, %eax
+    movl %eax, -32(%rbp)
+
+    //set va2 index ci0 with ci2
+    movl $2, %eax
+    movl %eax, -64(%rbp)
+
+    //set va3 index ci10 with pi3
+    movl %edx, %eax
+    movl %eax, -68(%rbp)
+
+    //set va3 index ci0 with ci3
+    movl $3, %eax
+    movl %eax, -108(%rbp)
+
+    //return ci123
+    movl $123, %eax
+
+    leave
+    ret

@@ -8,6 +8,7 @@ void process_local_variables();
 void process_instructions();
 void process_attribuition();
 void process_vector_getter();
+void process_vector_setter();
 
 //Essas structs servem para salvarmos as informacoes necessarias e uteis das nossas variaveis locais para facilitar o uso do registrador da pilha correspondentes a uma variavel.
 typedef struct stack_info
@@ -127,7 +128,7 @@ void process_instructions()
 	while(strncmp(buffer, "end", 3) != 0)
 	{
 		if(strncmp(buffer, "get", 3) == 0) process_vector_getter();
-		//if(strncmp(buffer, "set", 2) == 0) process_vector_setter();
+		if(strncmp(buffer, "set", 2) == 0) process_vector_setter();
 		read_line();
 	}
 }
@@ -208,4 +209,86 @@ void process_vector_getter()
 		target_offset = stack[target_index - 1].offset;
 		printf("    movl %%eax, %d(%%%s)\n", target_offset, target_register);
 	}
+}
+
+void process_vector_setter()
+{
+	// Buffer atual: "set CaN index ciN with CiN"
+
+	char vec_type;
+	int vec_index; 
+
+	int vec_offset;
+
+	char base_type;
+	int base_index;
+
+	sscanf(buffer, "set %ca%d index ci%d with %ci%d", 
+		&vec_type, &vec_index, &vec_offset,
+		&base_type, &base_index);
+
+	printf("       #Escrevendo no array.\n");
+	printf("       #Array: %ca%d\n", vec_type, vec_index);
+	printf("       #Index: %d\n", vec_offset);
+	printf("       #Valor: %ci%d\n", base_type, base_index);
+
+	char base_register[4];
+	int base_offset;
+	
+	if(base_type == 'p')
+	{
+		switch (base_index)
+		{
+			case 1:
+				strcpy(base_register, "edi");
+				break;
+			case 2:
+				strcpy(base_register, "esi");
+				break;
+			case 3:
+				strcpy(base_register, "edx");
+				break;
+		}
+
+		printf("    movl %%%s, %%eax\n", base_register);
+	}
+	else if (base_type == 'v')
+	{
+		strcpy(base_register, "rbp");
+		base_offset = stack[base_index - 1].offset;
+		printf("    movl %d(%%%s), %%eax\n", base_offset, base_register);
+	}
+	else	//base_type == 'c' (constante)
+	{
+		printf("    movl $%d, %%eax\n", base_index);
+	}
+
+	char register_pointer[4];
+	int stack_offset;
+
+	if(vec_type == 'v')
+	{
+		strcpy(register_pointer, "rbp");
+		stack_offset = stack[vec_index - 1].offset;	// vec_offset = &va
+		stack_offset += 4 * vec_offset;
+	}
+	else	// vec_type = "p"
+	{
+		switch (vec_index)
+		{
+			case 1:
+				strcpy(register_pointer, "rdi");
+				break;
+			case 2:
+				strcpy(register_pointer, "rsi");
+				break;
+			case 3:
+				strcpy(register_pointer, "rdx");
+				break;
+		}
+
+		stack_offset = vec_offset * 4;
+	}
+
+	printf("    movl %%eax, %d(%%%s)\n", stack_offset, register_pointer);
 }

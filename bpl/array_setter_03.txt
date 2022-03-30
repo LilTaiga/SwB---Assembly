@@ -1,0 +1,79 @@
+f60:
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $16, %rsp
+
+    // -4(%rbp) -> vi1
+
+    //set pa1 index ci2 with vi1
+    movl -4(%rbp), %eax
+    movl %eax, 8(%rdi)
+
+    //set pa1 index ci1 with pi2
+    movl %esi, %eax
+    movl %eax, 4(%rdi)
+
+    //set pa1 index ci4 with pi2
+    movl -esi, %eax
+    movl %eax, 16(%rdi)
+
+    //set pa1 index ci3 with vi1
+    movl -4(%rbp), %eax
+    movl %eax, 12(%rdi)
+
+    //set pa1 index ci0 with ci55
+    movl $55, %eax
+    movl %eax, 0(%rdi)
+
+
+    leave
+    ret
+
+
+
+f63:
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $16, %rsp
+
+    // -4(%rbp) -> vi1
+    // -8(%rbp) -> vi2
+
+    //set pa2 index ci100 with pi1
+    movl %edi, %eax
+    movl %eax, 400(%rsi)
+
+    //set pa2 index ci50 with vi1
+    movl -4(%rbp), %eax
+    movl %eax, 200(%rsi)
+
+    //set pa2 index ci25 with vi2
+    movl -8(%rbp), %eax
+    movl %eax, 100(%rsi)
+
+    //set pa3 index ci2 with vi2
+    movl -8(%rbp), %eax
+    movl %eax, 8(%rdx)
+
+    //set pa3 index ci5 with vi1
+    movl -4(%rbp), %eax
+    movl %eax, 20(%rdx)
+
+    //set pa3 index ci9 with pi1
+    movl %edi, %eax
+    movl %eax, 36(%rdx)
+
+    //set pa2 index ci12 with ci12
+    movl $12, %eax
+    movl %eax, 400(%rsi)
+
+    //set pa3 index c7 with ci123456
+    movl $123456, %eax
+    movl %eax, 36(%rdx)
+    
+
+    //return ci42
+    movl $42, %eax
+
+    leave
+    ret
