@@ -1,0 +1,75 @@
+f15:
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $32, %rsp
+    // -20(%rbp) -> va1
+    // -20(%rbp) -> va1[0]
+    // -16(%rbp) -> va1[1]
+    // -12(%rbp) -> va1[2]
+    //  -8(%rbp) -> va1[3]
+    //  -4(%rbp) -> va1[4]
+
+    // -24(%rbp) -> vi2
+
+    //get va1 index ci2 to vi2
+    movl -12(%rbp), %eax
+    movl %eax, -24(%rbp)
+
+    //get va1 index ci0 to vi2
+    movl -20(%rbp), %eax
+    movl %eax, -24(%rbp)
+
+    //get va1 index ci4 to vi2
+    movl -4(%rbp), %eax
+    movl %eax, -24(%rbp)
+
+    //return ci0
+    movl $0, %eax
+
+    leave
+    ret
+
+f16:
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $80, %rsp
+    // -20(%rbp) -> va1
+    // -20(%rbp) -> va1[0]
+    // -16(%rbp) -> va1[1]
+    // -12(%rbp) -> va1[2]
+    //  -8(%rbp) -> va1[3]
+    //  -4(%rbp) -> va1[4]
+
+    // -60(%rbp) -> va2
+    // -60(%rbp) -> va2[0]
+    // -56(%rbp) -> va2[1]
+    // -52(%rbp) -> va2[2]
+    // -48(%rbp) -> va2[3]
+    // -44(%rbp) -> va2[4]
+    // -40(%rbp) -> va2[5]
+    // -36(%rbp) -> va2[6]
+    // -32(%rbp) -> va2[7]
+    // -28(%rbp) -> va2[8]
+    // -24(%rbp) -> va2[9]
+
+    // -64(%rbp) -> vi3
+    // -68(%rbp) -> vi4
+
+    //get va1 index ci1 to vi3
+    movl -16(%rbp), %eax
+    movl %eax, -64(%rbp)
+
+    //get va2 index ci1 to vi4
+    movl -56(%rbp), %eax
+    movl %eax, -68(%rbp)
+
+    //get va1 index ci4 to vi3
+    movl -4(%rbp), %eax
+    movl %eax, -64(%rbp)
+
+    //get va2 index ci9 to vi3
+    movl -24(%rbp), %eax
+    movl %eax, -64(%rbp)
+
+    leave
+    ret

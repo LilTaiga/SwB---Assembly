@@ -7,41 +7,18 @@ int function_initialization();
 void process_local_variables();
 void process_instructions();
 void process_attribuition();
+void process_vector_getter();
+void process_vector_setter();
 
 //Essas structs servem para salvarmos as informacoes necessarias e uteis das nossas variaveis locais para facilitar o uso do registrador da pilha correspondentes a uma variavel.
-typedef struct variables_simple{ //struct para variaveis int (viN).
-	int pile_place, value;
-}variables;
-
-typedef struct variables_array{ //struct para arrays (vaN).
-	int pile_place, size, value;
-}variables_a;
+typedef struct stack_info
+{
+	int offset;
+	unsigned int size;
+} stack_info;
 
 //temos no maximo 5 variaveis locais.
-variables v1[5]; // v1 é dedicado a variaveis que nao sao arrays.
-variables_a v2[5]; // v2 é dedicado a variaveis que sao arrays.
-
-// Aqui é onde o processo de compilação de BPL para Assembly ocorre.
-// Todas as funções relacionadas a gerar código Assembly são feitas aqui.
-
-// Essa função é chamada quando encontra-se uma função em BPL
-// Buffer atual: "function fN {pX1 {pX2 {pX3}}}"
-// Esta função retorna quando encontra-se a palavra-chave "end"
-
-void process_attribution()
-{
-  matches = sscanf(buffer, "vi%d = %ci%d %c %ci%d", &main_variable, &variable_type[0], &variable_number[0], &operation, &variable_type[1], &variable_number[1]);
-		// Caso de atribuicao.
-		if(matches == 3){
-			if(variable_type[0] == 'c') printf("    movl $%d, %d(%%rbp)\n", variable_number[0], v1[main_variable-1].pile_place);
-			if(variable_type[0] == 'v') printf("    movl %d(%%rbp), %d(%%rbp)\n", v1[variable_number[0]-1].pile_place, v1[main_variable-1].pile_place);
-			if(variable_type[0] == 'p'){
-				if(variable_number[0] == 1) printf("    movl %%edi, %d(%%rbp)\n", v1[main_variable-1].pile_place);
-				else if(variable_number[0] == 2) printf("    movl %%esi, %d(%%rbp)\n", v1[main_variable-1].pile_place);
-				else printf("    movl %%edx, %d(%%rbp)\n", v1[main_variable-1].pile_place);
-			}
-		}
-}
+stack_info stack[5];
 
 void compile_function()
 {
@@ -107,7 +84,10 @@ void process_local_variables()
 			
 			required_bytes += 4;
 
-			v1[index-1].pile_place = required_bytes * (-1); 
+			stack[index-1].offset = required_bytes * (-1);
+
+			printf("        #vi%d.offset = %d\n", index, stack[index-1].offset);
+			
 			continue;
 		}
 		if(strncmp(buffer, "vet", 3) == 0)
@@ -117,11 +97,13 @@ void process_local_variables()
 
 			required_bytes += 4 * vector_size;
 
-			v2[index-1].size = vector_size;
-			v2[index-1].pile_place = required_bytes * (-1);
+			stack[index-1].size = vector_size;
+			stack[index-1].offset = (required_bytes) * (-1);
+
+			printf("        #va%d.offset = %d\n", index, stack[index-1].offset);
+			continue;
 		}
-
-
+		
 	} while(strncmp(buffer, "enddef", 6) != 0);
 
 	// Agora que sabemos quantos bytes precisamos, hora de alocar a pilha.
@@ -143,21 +125,170 @@ void process_instructions()
 
 	read_line();	// Buffer atual: ??? ("end" ou instrução)
 
-	// Enquanto não encontrarmos o final da função, iremos processar as operações.
-	// Processar as operações é um simples caso de casar a string de formatação.
-	// Ao chegar no final da função, pare.
-
-
-	int matches = 0; //Numero de acertos na funcao strncmp.
-	char operation; // tipo da operaçao.
-	int main_variable; // Numero da vaariavel a ser alterada.
-	char variable_type[2]; // numero das variaveis usadas na operacao.
-	int variable_number[2]; // tipo da variavel utilizada.
 	while(strncmp(buffer, "end", 3) != 0)
-	{ 
-		if(strncmp(buffer, "vi", 2) == 0) process_atribution();
-		//if(strncmp(buffer, "get", 3) == 0) process_vector_getter();
-		//if(strncmp(buffer, "set", 2) == 0) process_vector_setter();
+	{
+		if(strncmp(buffer, "get", 3) == 0) process_vector_getter();
+		if(strncmp(buffer, "set", 2) == 0) process_vector_setter();
 		read_line();
 	}
+}
+
+void process_vector_getter()
+{
+	// Buffer atual: "get CaN index ciN to CiN"
+
+	char vec_type;	// variável local ou parâmetro
+	int vec_index;	// índice do vetor
+
+	int vec_offset;	// A posição a ser acessada
+
+	char target_type;	// variável local ou parâmetro
+	int target_index;	// índice do target
+
+	sscanf(buffer, "get %ca%d index ci%d to %ci%d", 
+		&vec_type, &vec_index, &vec_offset,
+		&target_type, &target_index);
+
+	printf("       #Acessando array.\n");
+	printf("       #Array: %ca%d\n", vec_type, vec_index);
+	printf("       #Index: %d\n", vec_offset);
+	printf("       #Destino: %ci%d\n", target_type, target_index);
+
+	char register_pointer[4];
+	int stack_offset;
+
+	if(vec_type == 'v')
+	{
+		strcpy(register_pointer, "rbp");
+		stack_offset = stack[vec_index - 1].offset;	// vec_offset = &va
+		stack_offset += 4 * vec_offset;
+	}
+	else	// vec_type = "p"
+	{
+		switch (vec_index)
+		{
+			case 1:
+				strcpy(register_pointer, "rdi");
+				break;
+			case 2:
+				strcpy(register_pointer, "rsi");
+				break;
+			case 3:
+				strcpy(register_pointer, "rdx");
+				break;
+		}
+
+		stack_offset = vec_offset * 4;
+	}
+
+	printf("    movl %d(%%%s), %%eax\n", stack_offset, register_pointer);
+
+	char target_register[4];
+	int target_offset;
+	
+	if(target_type == 'p')
+	{
+		switch (target_index)
+		{
+			case 1:
+				strcpy(target_register, "edi");
+				break;
+			case 2:
+				strcpy(target_register, "esi");
+				break;
+			case 3:
+				strcpy(target_register, "edx");
+				break;
+		}
+
+		printf("    movl %%eax, %%%s\n", target_register);
+	}
+	else	// target_type == 'v'
+	{
+		strcpy(target_register, "rbp");
+		target_offset = stack[target_index - 1].offset;
+		printf("    movl %%eax, %d(%%%s)\n", target_offset, target_register);
+	}
+}
+
+void process_vector_setter()
+{
+	// Buffer atual: "set CaN index ciN with CiN"
+
+	char vec_type;
+	int vec_index; 
+
+	int vec_offset;
+
+	char base_type;
+	int base_index;
+
+	sscanf(buffer, "set %ca%d index ci%d with %ci%d", 
+		&vec_type, &vec_index, &vec_offset,
+		&base_type, &base_index);
+
+	printf("       #Escrevendo no array.\n");
+	printf("       #Array: %ca%d\n", vec_type, vec_index);
+	printf("       #Index: %d\n", vec_offset);
+	printf("       #Valor: %ci%d\n", base_type, base_index);
+
+	char base_register[4];
+	int base_offset;
+	
+	if(base_type == 'p')
+	{
+		switch (base_index)
+		{
+			case 1:
+				strcpy(base_register, "edi");
+				break;
+			case 2:
+				strcpy(base_register, "esi");
+				break;
+			case 3:
+				strcpy(base_register, "edx");
+				break;
+		}
+
+		printf("    movl %%%s, %%eax\n", base_register);
+	}
+	else if (base_type == 'v')
+	{
+		strcpy(base_register, "rbp");
+		base_offset = stack[base_index - 1].offset;
+		printf("    movl %d(%%%s), %%eax\n", base_offset, base_register);
+	}
+	else	//base_type == 'c' (constante)
+	{
+		printf("    movl $%d, %%eax\n", base_index);
+	}
+
+	char register_pointer[4];
+	int stack_offset;
+
+	if(vec_type == 'v')
+	{
+		strcpy(register_pointer, "rbp");
+		stack_offset = stack[vec_index - 1].offset;	// vec_offset = &va
+		stack_offset += 4 * vec_offset;
+	}
+	else	// vec_type = "p"
+	{
+		switch (vec_index)
+		{
+			case 1:
+				strcpy(register_pointer, "rdi");
+				break;
+			case 2:
+				strcpy(register_pointer, "rsi");
+				break;
+			case 3:
+				strcpy(register_pointer, "rdx");
+				break;
+		}
+
+		stack_offset = vec_offset * 4;
+	}
+
+	printf("    movl %%eax, %d(%%%s)\n", stack_offset, register_pointer);
 }
