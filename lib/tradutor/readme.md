@@ -12,11 +12,11 @@
     - [ ] Multiplicação
     - [ ] Divisão
     - [ ] Chamada de função
-  - [ ] Acesso a arrays
-    - [ ] Leitura
-    - [ ] Escrita
+  - [x] Acesso a arrays
+    - [x] Leitura
+    - [x] Escrita
   - [ ] Condicional if
-  - [ ] Retorno
+  - [x] Retorno
 
 ## Funções
 
