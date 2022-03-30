@@ -1,0 +1,30 @@
+f123:
+    pushq %rbp
+    movl %rsp, %rbp
+
+    //return ci0
+    movl $0, %eax
+
+    leave
+    ret
+
+
+f124:
+    pushq %rbp
+    movl %rsp, %rbp
+
+    //return ci24
+    movl $24, %eax
+
+    leave
+    ret
+
+f125:
+    pushq %rbp
+    movl %rsp, %rbp
+
+    //return ci-420
+    movl $-420, %eax
+
+    leave
+    ret

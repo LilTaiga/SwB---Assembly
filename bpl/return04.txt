@@ -1,0 +1,47 @@
+f888:
+    pushq %rbp
+    movl %rsp, %rbp
+    sub $32, %rsp
+
+    // -20(%rbp) -> va1
+    // -24(%rbp) -> vi2
+
+    //return vi2
+    movl -24(%rbp), %eax
+
+    leave
+    ret
+
+
+f999:
+    pushq %rbp
+    movl %rsp, %rbp
+    sub $32, %rsp
+
+    // -4(%rbp) -> vi1
+    // -24(%rbp) -> va2
+
+    //return pi3
+    movl %edx, %eax
+
+    leave
+    ret
+
+
+
+f101010:
+    pushq %rbp
+    movl %rsp, %rbp
+    sub $144, %rsp
+
+    // -4(%rbp) -> vi1
+    // -44(%rbp) -> va2
+    // -48(%rbp) -> vi3
+    // -128(%rbp) -> va4
+    // -132(%rbp) -> vi5
+
+    //return vi5
+    movl -132(%rbp), %eax
+
+    leave
+    ret
