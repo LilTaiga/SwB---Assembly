@@ -1,0 +1,45 @@
+f153:
+    pushq %rbp
+    movl %rsp, %rbp
+    sub $16, %rsp
+
+    // -4(%rbp) -> vi1
+
+    //return vi1
+    movl -4(%rbp), %eax
+
+    leave
+    ret
+
+
+
+f154:
+    pushq %rbp
+    movl %rsp, %rbp
+    sub $16, %rsp
+
+    // -4(%rbp) -> vi1
+    // -8(%rbp) -> vi2
+    // -12(%rbp) -> vi3
+
+    //return vi3
+    movl -12(%rbp), %eax
+
+    leave
+    ret
+
+
+
+f155:
+    pushq %rbp
+    movl %rsp, %rbp
+    sub $32, %rsp
+
+    // -28(%rbp) -> va1
+    // -32(%rbp) -> vi2
+
+    //return vi3
+    movl -32(%rbp), %eax
+
+    leave
+    ret

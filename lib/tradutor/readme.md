@@ -6,9 +6,17 @@
 - [x] Definição de variáveis
 - [ ] Operações
   - [ ] Atribuição
-  - [ ] Acesso a arrays
+    - [ ] Atribuição simples
+    - [ ] Soma
+    - [ ] Subtração
+    - [ ] Multiplicação
+    - [ ] Divisão
+    - [ ] Chamada de função
+  - [x] Acesso a arrays
+    - [x] Leitura
+    - [x] Escrita
   - [ ] Condicional if
-  - [ ] Retorno
+  - [x] Retorno
 
 ## Funções
 

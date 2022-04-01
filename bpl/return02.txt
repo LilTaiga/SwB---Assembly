@@ -1,0 +1,32 @@
+f87:
+    pushq %rbp
+    movl %rsp, %rbp
+
+    //return pi1
+    movl %edi, %eax
+
+    leave
+    ret
+
+
+
+f88:
+    pushq %rbp
+    movl %rsp, %rbp
+
+    //return pi2
+    movl %esi, %eax
+
+    leave
+    ret
+
+
+f89:
+    pushq %rbp
+    movl %rsp, %rbp
+
+    //return pi3
+    movl %edx, %eax
+
+    leave
+    ret
