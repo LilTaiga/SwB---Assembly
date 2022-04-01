@@ -1,15 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "base.h"  // Aqui estão definidos o buffer e o read_line()
+#include "base.h"  // Aqui estão definidos o buffer e o read_line() e as declarações das demais funções.
 
-int function_initialization();
-void process_local_variables(int a);
-void process_instructions();
-void process_attribuition();
-void process_vector_getter();
-void process_vector_setter();
-void process_return();
+
 //Essas structs servem para salvarmos as informacoes necessarias e uteis das nossas variaveis locais para facilitar o uso do registrador da pilha correspondentes a uma variavel.
 typedef struct stack_info
 {
@@ -30,6 +24,149 @@ stack_info parameter[3];
 // Essa função é chamada quando encontra-se uma função em BPL
 // Buffer atual: "function fN {pX1 {pX2 {pX3}}}"
 // Esta função retorna quando encontra-se a palavra-chave "end"
+
+void compile_function()
+{
+	// Registradores:
+	// Primeiro parâmetro: %di
+	// Segundo parâmetro: %si
+	// Terceiro parâmetro: %dx
+	
+	int parameters = function_initialization();
+	
+	// Inicializar a pilha
+
+	printf("    pushq %%rbp\n");
+	printf("    movq %%rsp, %%rbp\n");
+
+	// Processar as variáveis locais
+
+	process_local_variables(parameters);
+	
+	// Processar as instruções
+
+	process_instructions();
+
+	// Desfazer a pilha
+
+	printf("    leave\n");
+	printf("    ret\n\n");
+}
+
+int function_initialization()
+{
+	int function_number = 0;
+	char parameter_types[3];
+
+	int matches = sscanf(buffer, "function f%d p%c1 p%c2 p%c3", &function_number,
+						 &parameter_types[0], &parameter_types[1], &parameter_types[2]);
+
+  for(int i = 0; i<matches; i++){
+    if(parameter_types[i] == 'i') parameter[i].offset = 4;
+    if(parameter_types[i] == 'a') parameter[i].offset = 8;
+  }
+
+
+	// Sabemos que pelo menos o primeiro %d foi lido com sucesso.
+	// Para descobrir a quantidade de parâmetros. Devemos olhar quantos matches foram feitos.
+
+	printf(".globl f%d\n", function_number);
+	printf("f%d:\n", function_number);
+
+	return matches;
+}
+
+void process_local_variables(int a)
+{
+	// Buffer atual: "function fN {pX1 {pX2 {pX3}}}"
+
+	read_line();  	// Buffer atual: "def"
+	// Agora iremos ler as próximas linhas até encontrar "enddef"
+	// E alocar o espaço necessário na pilha.
+
+	int required_bytes = 0;
+	int index;
+		
+	do
+	{
+		read_line();
+		if(strncmp(buffer, "var", 3) == 0)
+		{
+			sscanf(buffer, "var vi%d", &index);
+			
+			required_bytes += 4;
+
+			stack[index-1].offset = required_bytes * (-1);
+			printf("        #vi%d.offset = %d\n", index, stack[index-1].offset);
+
+			continue;
+		}
+		if(strncmp(buffer, "vet", 3) == 0)
+		{
+			int vector_size = 0;
+			sscanf(buffer, "vet va%d size ci%d", &index, &vector_size);
+
+			required_bytes += 4 * vector_size;
+
+			stack[index-1].size = vector_size;
+
+			stack[index-1].offset = (required_bytes) * (-1);
+			printf("        #va%d.offset = %d\n", index, stack[index-1].offset);
+			continue;
+		}
+		
+	} while(strncmp(buffer, "enddef", 6) != 0);
+
+  //Adicionando os parametros à pilha em caso de chamada de funcoes 
+  for(int i = 0; i < a; i++){
+    //Para paremetros do tipo inteiro
+    if(parameter[i].offset == 4){
+      required_bytes += 4;
+      parameter[i].offset = required_bytes * (-1);
+      printf("#pi%d: %d\n", i+1, parameter[i].offset);
+    }else if(parameter[i].offset == 8){ //Para parametros ponteiros
+      required_bytes += 4;
+
+      //É necessario garantir alinhamento do tipo ponteiro com 8
+      while(required_bytes%8 != 0)
+        required_bytes += 4;
+      parameter[i].offset = required_bytes * (-1);
+      printf("#pa%d: %d\n", i+1, parameter[i].offset);
+    }
+  }
+
+	// Agora que sabemos quantos bytes precisamos, hora de alocar a pilha.
+	// Lembrando que a pilha deve sempre ser alocada em múltiplos de 16
+
+	if(required_bytes == 0)
+		return;
+
+	int stack_size = 0;
+	while(stack_size < required_bytes)
+		stack_size += 16;
+
+	printf("    subq $%d, %%rsp\n\n", stack_size);
+}
+
+void process_instructions()
+{
+	// Buffer atual: "enddef"
+
+	read_line();	// Buffer atual: ??? ("end" ou instrução)
+
+  
+	// Enquanto não encontrarmos o final da função, iremos processar as operações.
+	
+	while(strncmp(buffer, "end", 3) != 0)
+	{ 
+		if(strncmp(buffer, "vi", 2) == 0) process_attribution();
+    //if(strncmp(buffer, "pi", 2) == 0) process_attribution();
+		if(strncmp(buffer, "get", 3) == 0) process_vector_getter();
+		if(strncmp(buffer, "set", 2) == 0) process_vector_setter();
+		if(strncmp(buffer, "return", 6) == 0) process_return();
+		read_line();
+	}
+}
 
 void process_attribution()
 {
@@ -235,149 +372,6 @@ void process_attribution()
       } 
     }
   }
-}
-
-void compile_function()
-{
-	// Registradores:
-	// Primeiro parâmetro: %di
-	// Segundo parâmetro: %si
-	// Terceiro parâmetro: %dx
-	
-	int parameters = function_initialization();
-	
-	// Inicializar a pilha
-
-	printf("    pushq %%rbp\n");
-	printf("    movq %%rsp, %%rbp\n");
-
-	// Processar as variáveis locais
-
-	process_local_variables(parameters);
-	
-	// Processar as instruções
-
-	process_instructions();
-
-	// Desfazer a pilha
-
-	printf("    leave\n");
-	printf("    ret\n\n");
-}
-
-int function_initialization()
-{
-	int function_number = 0;
-	char parameter_types[3];
-
-	int matches = sscanf(buffer, "function f%d p%c1 p%c2 p%c3", &function_number,
-						 &parameter_types[0], &parameter_types[1], &parameter_types[2]);
-
-  for(int i = 0; i<matches; i++){
-    if(parameter_types[i] == 'i') parameter[i].offset = 4;
-    if(parameter_types[i] == 'a') parameter[i].offset = 8;
-  }
-
-
-	// Sabemos que pelo menos o primeiro %d foi lido com sucesso.
-	// Para descobrir a quantidade de parâmetros. Devemos olhar quantos matches foram feitos.
-
-	printf(".globl f%d\n", function_number);
-	printf("f%d:\n", function_number);
-
-	return matches;
-}
-
-void process_local_variables(int a)
-{
-	// Buffer atual: "function fN {pX1 {pX2 {pX3}}}"
-
-	read_line();  	// Buffer atual: "def"
-	// Agora iremos ler as próximas linhas até encontrar "enddef"
-	// E alocar o espaço necessário na pilha.
-
-	int required_bytes = 0;
-	int index;
-		
-	do
-	{
-		read_line();
-		if(strncmp(buffer, "var", 3) == 0)
-		{
-			sscanf(buffer, "var vi%d", &index);
-			
-			required_bytes += 4;
-
-			stack[index-1].offset = required_bytes * (-1);
-			printf("        #vi%d.offset = %d\n", index, stack[index-1].offset);
-
-			continue;
-		}
-		if(strncmp(buffer, "vet", 3) == 0)
-		{
-			int vector_size = 0;
-			sscanf(buffer, "vet va%d size ci%d", &index, &vector_size);
-
-			required_bytes += 4 * vector_size;
-
-			stack[index-1].size = vector_size;
-
-			stack[index-1].offset = (required_bytes) * (-1);
-			printf("        #va%d.offset = %d\n", index, stack[index-1].offset);
-			continue;
-		}
-		
-	} while(strncmp(buffer, "enddef", 6) != 0);
-
-  //Adicionando os parametros à pilha em caso de chamada de funcoes 
-  for(int i = 0; i < a; i++){
-    //Para paremetros do tipo inteiro
-    if(parameter[i].offset == 4){
-      required_bytes += 4;
-      parameter[i].offset = required_bytes * (-1);
-      printf("#pi%d: %d\n", i+1, parameter[i].offset);
-    }else if(parameter[i].offset == 8){ //Para parametros ponteiros
-      required_bytes += 4;
-
-      //É necessario garantir alinhamento do tipo ponteiro com 8
-      while(required_bytes%8 != 0)
-        required_bytes += 4;
-      parameter[i].offset = required_bytes * (-1);
-      printf("#pa%d: %d\n", i+1, parameter[i].offset);
-    }
-  }
-
-	// Agora que sabemos quantos bytes precisamos, hora de alocar a pilha.
-	// Lembrando que a pilha deve sempre ser alocada em múltiplos de 16
-
-	if(required_bytes == 0)
-		return;
-
-	int stack_size = 0;
-	while(stack_size < required_bytes)
-		stack_size += 16;
-
-	printf("    subq $%d, %%rsp\n\n", stack_size);
-}
-
-void process_instructions()
-{
-	// Buffer atual: "enddef"
-
-	read_line();	// Buffer atual: ??? ("end" ou instrução)
-
-  
-	// Enquanto não encontrarmos o final da função, iremos processar as operações.
-	
-	while(strncmp(buffer, "end", 3) != 0)
-	{ 
-		if(strncmp(buffer, "vi", 2) == 0) process_attribution();
-    //if(strncmp(buffer, "pi", 2) == 0) process_attribution();
-		if(strncmp(buffer, "get", 3) == 0) process_vector_getter();
-		if(strncmp(buffer, "set", 2) == 0) process_vector_setter();
-		if(strncmp(buffer, "return", 6) == 0) process_return();
-		read_line();
-	}
 }
 
 void process_vector_getter()

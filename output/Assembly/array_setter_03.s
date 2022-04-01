@@ -1,9 +1,10 @@
-here
 .globl f60
 f60:
     pushq %rbp
     movq %rsp, %rbp
         #vi1.offset = -4
+#pa1: -8
+#pi2: -12
     subq $16, %rsp
 
        #Escrevendo no array.
@@ -48,7 +49,10 @@ f63:
     movq %rsp, %rbp
         #vi1.offset = -4
         #vi2.offset = -8
-    subq $16, %rsp
+#pi1: -12
+#pa2: -16
+#pa3: -24
+    subq $32, %rsp
 
        #Escrevendo no array.
        #Array: pa2
