@@ -2,7 +2,7 @@ function f1 pi1
 def
 var vi1
 enddef
-vi1 = pi1
+vi1 = vi1 - ci5
 
 return ci1024
 end
