@@ -17,6 +17,9 @@ stack_info stack[5];
 // temos tbm 3 parametros que podem vir com a funcao
 stack_info parameter[3];
 
+
+int current_function = -1;
+
 // Aqui é onde o processo de compilação de BPL para Assembly ocorre.
 // Todas as funções relacionadas a gerar código Assembly são feitas aqui.
 
@@ -45,20 +48,15 @@ void compile_function()
 	// Processar as instruções
 
 	process_instructions();
-
-	// Desfazer a pilha
-
-	printf("    leave\n");
-	printf("    ret\n\n");
 }
 
 int function_initialization()
 {
-	int function_number = 0;
+	current_function = 0;
 	char parameter_types[3];
 
 	int matches =
-		sscanf(buffer, "function f%d p%c1 p%c2 p%c3", &function_number, &parameter_types[0], &parameter_types[1], &parameter_types[2]);
+		sscanf(buffer, "function f%d p%c1 p%c2 p%c3", &current_function, &parameter_types[0], &parameter_types[1], &parameter_types[2]);
 
 	for (int i = 0; i < matches; i++)
 	{
@@ -72,8 +70,8 @@ int function_initialization()
 	// Para descobrir a quantidade de parâmetros. Devemos olhar quantos matches
 	// foram feitos.
 
-	printf(".globl f%d\n", function_number);
-	printf("f%d:\n", function_number);
+	printf(".globl f%d\n", current_function);
+	printf("f%d:\n", current_function);
 
 	return matches - 1;
 }
@@ -89,7 +87,10 @@ void process_local_variables(int a)
 	int required_bytes = 0;
 	int index;
 
-	do {
+	printf("        # Reservando espaço para as variáveis locais na pilha\n");
+
+	do
+	{
 		read_line();
 		if (strncmp(buffer, "var", 3) == 0)
 		{
@@ -98,7 +99,7 @@ void process_local_variables(int a)
 			required_bytes += 4;
 
 			stack[index - 1].offset = required_bytes *(-1);
-			printf("    #vi%d = %d\n", index, stack[index - 1].offset);
+			printf("        #vi%d.offset: %d\n", index, stack[index - 1].offset);
 
 			continue;
 		}
@@ -112,10 +113,13 @@ void process_local_variables(int a)
 			stack[index - 1].size = vector_size;
 
 			stack[index - 1].offset = (required_bytes) *(-1);
-			printf("    #va%d = %d\n", index, stack[index - 1].offset);
+			printf("        #va%d.offset: %d\n", index, stack[index - 1].offset);
 			continue;
 		}
 	} while (strncmp(buffer, "enddef", 6) != 0);
+
+	
+	printf("        # Reservando espaço (caso necessário) para os registradores na pilha.\n");
 
 	// Adicionando os parametros à pilha em caso de chamada de funcoes
 	for (int i = 0; i < a; i++)
@@ -125,7 +129,7 @@ void process_local_variables(int a)
 		{
 			required_bytes += 4;
 			parameter[i].offset = required_bytes *(-1);
-			printf("    #pi%d: %d\n", i + 1, parameter[i].offset);
+			printf("        #pi%d.offset: %d\n", i + 1, parameter[i].offset);
 			parameter[i].size = 1;
 		}
 		else if (parameter[i].offset == 8)
@@ -137,7 +141,7 @@ void process_local_variables(int a)
 			while (required_bytes % 8 != 0)
 				required_bytes += 4;
 			parameter[i].offset = required_bytes *(-1);
-			printf("    #pa%d: %d\n", i + 1, parameter[i].offset);
+			printf("        #pa%d.offset: %d\n", i + 1, parameter[i].offset);
 			parameter[i].size = 2;
 		}
 	}
@@ -162,9 +166,12 @@ void process_instructions()
 	read_line();	// Buffer atual: ??? ("end" ou instrução)
 
 	// Enquanto não encontrarmos o final da função, iremos processar as operações.
+	int if_occurrence = 0;
 
 	while (strncmp(buffer, "end", 3) != 0)
 	{
+		if (strncmp(buffer, "if", 2) == 0)
+			process_if(++if_occurrence);
 		if (strncmp(buffer, "vi", 2) == 0)
 			process_attribution();
 		// if(strncmp(buffer, "pi", 2) == 0) process_attribution();
@@ -499,8 +506,10 @@ void process_attribution()
 			}
 		}
 	}
-	matches = sscanf(buffer, "vi%d = call", &main_variable);
-	if (matches == 1)
+
+	int function_name;
+	matches = sscanf(buffer, "vi%d = call f%d", &main_variable, &function_name);
+	if (matches == 2)
 		call_function();
 }
 
@@ -515,10 +524,12 @@ void call_function()
 
 	matches = sscanf(buffer, "vi%d = call f%d %c%c%d %c%c%d %c%c%d", &variable_n, &f_num, &param[0], &param_t[0], &p_num[0], &param[1], &param_t[1], &p_num[1], &param[2], &param_t[2], &p_num[2]);
 
+	printf("\n        # Chamada de função!\n");
+
 	if (parameter[0].size != 0)
 	{
 		// se houver pelo menos 1 parametro
-		printf("    #salvar pilha\n");
+		printf("        #Salvando os nossos registradores na pilha\n");
 	}
 	for (int i = 0; i < 3; ++i)
 	{
@@ -619,6 +630,7 @@ void call_function()
 		i++;
 	}
 
+	printf("\n        # Chamando a função\n");
 	printf("    call f%d\n\n", f_num);
 
 	printf("    movl %%eax, %d(%%rbp)\n\n",
@@ -627,7 +639,7 @@ void call_function()
 	if (parameter[0].size != 0)
 	{
 		// se houver pelo menos 1 parametro
-		printf("    #recuperar pilha\n");
+		printf("    # Recuperando os nossos registradores da pilha\n");
 	}
 	for (i = 0; i < 3; ++i)
 	{
@@ -636,6 +648,7 @@ void call_function()
 		printf("    %s %d(%%rbp), %s\n", instp, parameter[i].offset, type_param[i]);
 	}
 	printf("\n");
+	printf("        # Fim da chamada de função!\n");
 }
 
 void process_vector_getter()
@@ -652,10 +665,10 @@ void process_vector_getter()
 
 	sscanf(buffer, "get %ca%d index ci%d to %ci%d", &vec_type, &vec_index, &vec_offset, &target_type, &target_index);
 
-	printf("       #Acessando array.\n");
-	printf("       #Array: %ca%d\n", vec_type, vec_index);
-	printf("       #Index: %d\n", vec_offset);
-	printf("       #Destino: %ci%d\n", target_type, target_index);
+	printf("        #Acessando array.\n");
+	printf("        #Array: %ca%d\n", vec_type, vec_index);
+	printf("        #Index: %d\n", vec_offset);
+	printf("        #Destino: %ci%d\n", target_type, target_index);
 
 	char register_pointer[4];
 	int stack_offset;
@@ -728,10 +741,10 @@ void process_vector_setter()
 
 	sscanf(buffer, "set %ca%d index ci%d with %ci%d", &vec_type, &vec_index, &vec_offset, &base_type, &base_index);
 
-	printf("       #Escrevendo no array.\n");
-	printf("       #Array: %ca%d\n", vec_type, vec_index);
-	printf("       #Index: %d\n", vec_offset);
-	printf("       #Valor: %ci%d\n", base_type, base_index);
+	printf("        #Escrevendo no array.\n");
+	printf("        #Array: %ca%d\n", vec_type, vec_index);
+	printf("        #Index: %d\n", vec_offset);
+	printf("        #Valor: %ci%d\n", base_type, base_index);
 
 	char base_register[4];
 	int base_offset;
@@ -794,6 +807,72 @@ void process_vector_setter()
 	printf("    movl %%eax, %d(%%%s)\n", stack_offset, register_pointer);
 }
 
+void process_if(int current_if)
+{
+	// Buffer atual: "if CiN"
+	// Primeiro de tudo:
+	// Precisamos saber o que estamos comparando
+	// Pra depois decidirmos o que vamos fazer.
+
+	char value_type;
+	int value_index;
+
+	sscanf(buffer, "if %ci%d", &value_type, &value_index);
+
+	printf("\n");
+	printf("        # if encontrado\n");
+	printf("        # Comparando o valor de: %ci%d\n", value_type, value_index);
+
+	// Agora que sabemos o que temos que comparar.
+	// Vamos escrever o código de comparação.
+	
+	if (value_type == 'c')
+	{
+		printf("    cmp $0, $%d\n", value_index);
+	}
+	else if (value_type == 'p')
+	{
+		char name_register[4];
+
+		switch (value_index)
+		{
+			case 1: strcpy(name_register, "edi"); break;
+			case 2: strcpy(name_register, "esi"); break;
+			case 3: strcpy(name_register, "edx"); break;
+		}
+
+		printf("    cmp $0, %%%s\n", name_register);
+	}
+	else	// value_type == 'v'
+	{
+		printf("    cmp $0, %d(%%rbp)\n", stack[value_index - 1].offset);
+	}
+
+	// Agora que comparamos o valor fornecido.
+	// Precisamos tomar uma decisão baseado no valor fornecido.
+
+	printf("    je f%d_if%d\n\n", current_function, current_if);
+
+	// Agora que fizemos uma tomada de decisão, é hora de escrever a instrução do if
+	read_line();
+	printf("        # Instrução do if:\n");
+
+	if (strncmp(buffer, "vi", 2) == 0)
+		process_attribution();
+	if (strncmp(buffer, "get", 3) == 0)
+		process_vector_getter();
+	if (strncmp(buffer, "set", 2) == 0)
+		process_vector_setter();
+	if (strncmp(buffer, "return", 6) == 0)
+			process_return();
+
+	// E por fim, precisamos do label do fim do if
+	read_line();
+	printf("\n");
+	printf("        # Fim do if\n");
+	printf("f%d_if%d:\n\n", current_function, current_if);
+}
+
 void process_return()
 {
 	// Buffer atual: "return CiN"
@@ -830,4 +909,9 @@ void process_return()
 	{
 		printf("    movl %d(%%rbp), %%eax\n", stack[return_value - 1].offset);
 	}
+
+	printf("    leave\n");
+	printf("    ret\n\n");
+
+	current_function = -1;
 }

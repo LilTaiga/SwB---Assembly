@@ -1,0 +1,25 @@
+f500:
+    pushq %rbp
+    movq %rsp, %rbp
+
+    // -4(%rbp) -> vi1
+    subq $16, %rsp
+
+    //vi1 = ci5
+    movl $5, -4($rbp)
+
+    //if pi1
+    cmp $0, %edi
+    je f500_if1
+
+    //vi1 = pi1
+    movl %edi, -4(%rbp)
+
+    //endif
+f500_if1:
+
+    //return ci0
+    movl $0, %eax
+
+    leave
+    ret
