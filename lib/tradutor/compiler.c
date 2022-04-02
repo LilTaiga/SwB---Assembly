@@ -124,6 +124,7 @@ void process_local_variables(int a)
       required_bytes += 4;
       parameter[i].offset = required_bytes * (-1);
       printf("#pi%d: %d\n", i+1, parameter[i].offset);
+      parameter[i].size = 1;
     }else if(parameter[i].offset == 8){ //Para parametros ponteiros
       required_bytes += 4;
 
@@ -132,6 +133,7 @@ void process_local_variables(int a)
         required_bytes += 4;
       parameter[i].offset = required_bytes * (-1);
       printf("#pa%d: %d\n", i+1, parameter[i].offset);
+      parameter[i].size = 2;
     }
   }
 
@@ -160,7 +162,7 @@ void process_instructions()
 	while(strncmp(buffer, "end", 3) != 0)
 	{ 
 		if(strncmp(buffer, "vi", 2) == 0) process_attribution();
-    //if(strncmp(buffer, "pi", 2) == 0) process_attribution();
+    	//if(strncmp(buffer, "pi", 2) == 0) process_attribution();
 		if(strncmp(buffer, "get", 3) == 0) process_vector_getter();
 		if(strncmp(buffer, "set", 2) == 0) process_vector_setter();
 		if(strncmp(buffer, "return", 6) == 0) process_return();
@@ -201,8 +203,48 @@ void process_attribution()
         printf("    movl %%edx, %d(%%rbp)\n", stack[main_variable-1].offset);
 		}
 	}
+   //caso seja divisão
+  if(operation == '/'){
+    char dividend[10], divisor[10];
+    if(variable_type[0] == 'c'){
+      sprintf(dividend, "$%d", variable_type[0]);
+    }
+    if(variable_type[0] == 'v'){
+      sprintf(dividend, "%d(%%rbp)", stack[variable_number[0]-1].offset);
+    }
+    if(variable_type[0] == 'p'){
+      if(variable_number[0] == 1)
+        strcpy(dividend,"%%edi");
+      if(variable_number[0] == 2)
+        strcpy(dividend,"%%esi");
+      if(variable_number[0] == 3)
+        strcpy(dividend,"%%edx");
+    }
+    if(variable_type[1] == 'c'){
+      sprintf(divisor, "$%d", variable_type[1]);
+    }
+    if(variable_type[1] == 'v'){
+      sprintf(divisor, "%d(%%rbp)", stack[variable_number[1]-1].offset);
+    }
+    if(variable_type[1] == 'p'){
+      if(variable_number[1] == 1)
+        strcpy(divisor,"%%edi");
+      if(variable_number[1] == 2)
+        strcpy(divisor,"%%esi");
+      if(variable_number[1] == 3)
+        strcpy(divisor,"%%edx");
+    }
+    
+    printf("    movl %s, %%ecx\n", divisor);
+    printf("    movl %s, %%eax\n", dividend);
+    printf("    cltd\n");
+    printf("    idivl %%ecx\n");
+    printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable-1].offset);
+    
+  }
   
-  if(operation != ' '){
+  // Aqui é designado qual tipo de operação ira ser executada entre soma, subtração e multiplição.
+  if(operation != '0' && operation != '/'){
     char op[6];
     if(operation == '+')
       strcpy(op, "addl");
@@ -373,6 +415,89 @@ void process_attribution()
     }
   }
 }
+
+void call_function(){
+	int matches = 0; //numero de acertos na funcao strncmp.
+	char param[3] = {'0','0','0'}, param_t[3]; //Parametro e tipo do parametro
+	int p_num[3], variable_n, f_num; // numero do parametro, numero da variavel, numero função
+	char inst[3][5]; //instrução de atribuição de parametros
+	char instp[4], type_param[6]; //instrução para salvar e recuperar a pilha 
+
+	matches = sscanf(buffer, "vi%d = call f%d %c%c%d %c%c%d %c%c%d", &variable_n, &f_num, &param[0], &param_t[0], &p_num[0], &param[1], &param_t[1], &p_num[1], &param[2], &param_t[2], &p_num[2]);
+	
+	if(parameter[0].size != 0){ //se houver pelo menos 1 parametro
+		printf("    #salvar pilha\n");
+	}
+	for (int i = 0; i < 3; ++i){
+		if(parameter[i].size == 0)
+			break;
+		if(parameter[i].size == 2){
+			strcpy(instp, "movq");
+			if (i == 0){
+				strcpy(type_param, "%%rdi");
+			}
+			if (i == 1){
+				strcpy(type_param, "%%rsi");
+			}
+			if (i == 2){
+				strcpy(type_param, "%%rdx");
+			}	
+		}
+		if(parameter[i].size == 1){
+			strcpy(instp, "movl");
+			if (i == 0){
+				strcpy(type_param, "%%edi");
+			}
+			if (i == 1){
+				strcpy(type_param, "%%esi");
+			}
+			if (i == 2){
+				strcpy(type_param, "%%edx");
+			}
+		}
+		printf("    %s %s, %d(%%rbp)\n", instp, type_param, parameter[i].offset);
+	}
+
+	printf("\n");
+
+	for(int i = 0; i < 3; ++i){
+		if(param[i] == 'v' && param_t[i] == 'a'){
+			strcpy(inst[i], "leaq");
+		}else if(param[i] == 'p' && param_t[i] == 'a'){
+			strcpy(inst[i], "movq");
+		}
+		else if(param[i] != 0){
+			strcpy(inst[i], "movl");
+		}
+	}
+
+	//caso 1 parametro
+	for(int i = 5; i >= matches; i + 3){
+		if(param[i] == 'c')
+			printf("    %s $%d, %%edi\n", inst[i], p_num[i]);
+		if(param[i] == 'v'){
+			if(param_t[i] == 'a'){
+				printf("    %s %d(%%rbp), %%rdi\n", inst[i], stack[p_num[i]-1].offset);
+			}
+			if(param_t[i] == 'i'){
+				printf("    %s %d(%%rbp), %%edi\n", inst[i], stack[p_num[i]-1].offset);
+			}
+		}
+		if(param[i] == 'p'){
+			if(param_t[i] == 'a'){
+				printf("    %s %d(%%rbp), %%rdi\n", inst[i], parameter[p_num[i]-1].offset);
+			}
+			if(param_t[i] == 'i'){
+				printf("    %s %d(%%rbp), %%edi\n", inst[i], parameter[p_num[i]-1].offset);
+			}
+		}
+
+		
+		printf("movl $0, %%eax\n");
+		printf("call f%d\n\n", f_num);
+
+		printf("movl %%eax, %d(%%rbp)\n", stack[variable_n - 1].offset); //passa o valor para a variavel
+	}
 
 void process_vector_getter()
 {
