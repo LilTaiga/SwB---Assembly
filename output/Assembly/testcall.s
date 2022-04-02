@@ -5,12 +5,16 @@ f1:
     #vi1 = -4
     #va2 = -24
     #pi1: -28
-    subq $32, %rsp
+    #pa2: -40
+    #pi3: -44
+    subq $48, %rsp
 
     #salvar pilha
     movl %edi, -28(%rbp)
+    movq %rsi, -40(%rbp)
+    movl %edx, -44(%rbp)
 
-    movl -28(%rbp), %edi
+    movq -40(%rbp), %rdi
     movl $3, %esi
     leaq -24(%rbp), %rdx
     call f2
@@ -19,9 +23,13 @@ f1:
 
     #recuperar pilha
     movl -28(%rbp), %edi
+    movl -40(%rbp), %rsi
+    movl -44(%rbp), %edx
 
     #salvar pilha
     movl %edi, -28(%rbp)
+    movq %rsi, -40(%rbp)
+    movl %edx, -44(%rbp)
 
     movl -4(%rbp), %edi
     movl -28(%rbp), %esi
@@ -32,6 +40,8 @@ f1:
 
     #recuperar pilha
     movl -28(%rbp), %edi
+    movl -40(%rbp), %rsi
+    movl -44(%rbp), %edx
 
         #Retornando...
         #Valor de retorno: ci1024
