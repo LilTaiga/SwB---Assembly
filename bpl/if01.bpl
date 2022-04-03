@@ -9,3 +9,10 @@ endif
 
 return ci0
 end
+
+function f501 pi1 pi2
+def
+var vi1
+var vi2
+enddef
+

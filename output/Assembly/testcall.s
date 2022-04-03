@@ -2,14 +2,18 @@
 f1:
     pushq %rbp
     movq %rsp, %rbp
-    #vi1 = -4
-    #va2 = -24
-    #pi1: -28
-    #pa2: -40
-    #pi3: -44
+        # Reservando espaço para as variáveis locais na pilha
+        #vi1.offset: -4
+        #va2.offset: -24
+        # Reservando espaço (caso necessário) para os registradores na pilha.
+        #pi1.offset: -28
+        #pa2.offset: -40
+        #pi3.offset: -44
     subq $48, %rsp
 
-    #salvar pilha
+
+        # Chamada de função!
+        #Salvando os nossos registradores na pilha
     movl %edi, -28(%rbp)
     movq %rsi, -40(%rbp)
     movl %edx, -44(%rbp)
@@ -17,16 +21,21 @@ f1:
     movq -40(%rbp), %rdi
     movl $3, %esi
     leaq -24(%rbp), %rdx
+
+        # Chamando a função
     call f2
 
     movl %eax, -4(%rbp)
 
-    #recuperar pilha
+    # Recuperando os nossos registradores da pilha
     movl -28(%rbp), %edi
-    movl -40(%rbp), %rsi
+    movq -40(%rbp), %rsi
     movl -44(%rbp), %edx
 
-    #salvar pilha
+        # Fim da chamada de função!
+
+        # Chamada de função!
+        #Salvando os nossos registradores na pilha
     movl %edi, -28(%rbp)
     movq %rsi, -40(%rbp)
     movl %edx, -44(%rbp)
@@ -34,15 +43,18 @@ f1:
     movl -4(%rbp), %edi
     movl -28(%rbp), %esi
     movl $-5, %edx
+
+        # Chamando a função
     call f2
 
     movl %eax, -4(%rbp)
 
-    #recuperar pilha
+    # Recuperando os nossos registradores da pilha
     movl -28(%rbp), %edi
-    movl -40(%rbp), %rsi
+    movq -40(%rbp), %rsi
     movl -44(%rbp), %edx
 
+        # Fim da chamada de função!
         #Retornando...
         #Valor de retorno: ci1024
     movl $1024, %eax

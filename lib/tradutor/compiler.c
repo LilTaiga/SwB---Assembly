@@ -17,7 +17,6 @@ stack_info stack[5];
 // temos tbm 3 parametros que podem vir com a funcao
 stack_info parameter[3];
 
-
 int current_function = -1;
 
 // Aqui é onde o processo de compilação de BPL para Assembly ocorre.
@@ -48,6 +47,11 @@ void compile_function()
 	// Processar as instruções
 
 	process_instructions();
+
+	// Terminada de processar todas as instruções.
+	// Buffer atual: "end"
+
+	current_function = -1;
 }
 
 int function_initialization()
@@ -89,8 +93,7 @@ void process_local_variables(int a)
 
 	printf("        # Reservando espaço para as variáveis locais na pilha\n");
 
-	do
-	{
+	do {
 		read_line();
 		if (strncmp(buffer, "var", 3) == 0)
 		{
@@ -118,7 +121,6 @@ void process_local_variables(int a)
 		}
 	} while (strncmp(buffer, "enddef", 6) != 0);
 
-	
 	printf("        # Reservando espaço (caso necessário) para os registradores na pilha.\n");
 
 	// Adicionando os parametros à pilha em caso de chamada de funcoes
@@ -200,31 +202,30 @@ void process_attribution()
 	// Caso de atribuicao.
 	if (matches == 3)
 	{
-
+		printf("    #Atribuição:\n");
 		if (variable_type[0] == 'c')
-			printf("    movl $%d, %d(%%rbp)\n", variable_number[0],
-				stack[main_variable - 1].offset);
+			printf("    movl $%d, %d(%%rbp)\n", variable_number[0], stack[main_variable - 1].offset);
 
 		if (variable_type[0] == 'v')
 		{
-			printf("    movl %d(%%rbp), %%eax\n",
-				stack[variable_number[0] - 1].offset);
-			printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable - 1].offset);
+			printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[0] - 1].offset);
+			printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 		}
 
 		if (variable_type[0] == 'p')
 		{
 			if (variable_number[0] == 1)
-				printf("    movl %%edi, %d(%%rbp)\n", stack[main_variable - 1].offset);
+				printf("    movl %%edi, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 			else if (variable_number[0] == 2)
-				printf("    movl %%esi, %d(%%rbp)\n", stack[main_variable - 1].offset);
+				printf("    movl %%esi, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 			else
-				printf("    movl %%edx, %d(%%rbp)\n", stack[main_variable - 1].offset);
+				printf("    movl %%edx, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 		}
 	}
 	// caso seja divisão
 	if (operation == '/')
 	{
+		printf("        #Divisão:\n");
 		char dividend[10], divisor[10];
 		if (variable_type[0] == 'c')
 		{
@@ -280,6 +281,14 @@ void process_attribution()
 		if (operation == '*')
 			strcpy(op, "imull");
 
+		//Comentario para melhor compreensao do cogigo em assembly:
+		if (operation == '+')
+			printf("        #Adição:\n");
+		if (operation == '-')
+			printf("        #Subtração:\n");
+		if (operation == '*')
+			printf("        #Multiplicação:\n");
+
 		if (variable_type[0] == 'c')
 		{
 
@@ -287,15 +296,14 @@ void process_attribution()
 			{
 				printf("    movl $%d, %%eax\n", variable_number[0]);
 				printf("    %s $%d, %%eax\n", op, variable_number[1]);
-				printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable - 1].offset);
+				printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 			}
 
 			if (variable_type[1] == 'v')
 			{
-				printf("    movl %d(%%rbp), %%eax\n",
-					stack[variable_number[1] - 1].offset);
+				printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[1] - 1].offset);
 				printf("    %s $%d, %%eax\n", op, variable_number[0]);
-				printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable - 1].offset);
+				printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 			}
 
 			if (variable_type[1] == 'p')
@@ -304,22 +312,19 @@ void process_attribution()
 				{
 					printf("    movl $%d, %%eax\n", variable_number[0]);
 					printf("    %s %%edi, %%eax\n", op);
-					printf("    movl %%eax, %d(%%rbp)\n",
-						stack[main_variable - 1].offset);
+					printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 				}
 				else if (variable_number[1] == 2)
 				{
 					printf("    movl $%d, %%eax\n", variable_number[0]);
 					printf("    %s %%esi, %%eax\n", op);
-					printf("    movl %%eax, %d(%%rbp)\n",
-						stack[main_variable - 1].offset);
+					printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 				}
 				else
 				{
 					printf("    movl $%d, %%eax\n", variable_number[0]);
 					printf("    %s %%edx, %%eax\n", op);
-					printf("    movl %%eax, %d(%%rbp)\n",
-						stack[main_variable - 1].offset);
+					printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 				}
 			}
 		}
@@ -329,46 +334,37 @@ void process_attribution()
 
 			if (variable_type[1] == 'c')
 			{
-				printf("    movl %d(%%rbp), %%eax\n",
-					stack[variable_number[0] - 1].offset);
+				printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[0] - 1].offset);
 				printf("    %s $%d, %%eax\n", op, variable_number[1]);
-				printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable - 1].offset);
+				printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 			}
 
 			if (variable_type[1] == 'v')
 			{
-				printf("    movl %d(%%rbp), %%eax\n",
-					stack[variable_number[0] - 1].offset);
-				printf("    %s %d(%%rbp), %%eax\n", op,
-					stack[variable_number[1] - 1].offset);
-				printf("    movl %%eax, %d(%%rbp)\n", stack[main_variable - 1].offset);
+				printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[0] - 1].offset);
+				printf("    %s %d(%%rbp), %%eax\n", op, stack[variable_number[1] - 1].offset);
+				printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 			}
 
 			if (variable_type[1] == 'p')
 			{
 				if (variable_number[1] == 1)
 				{
-					printf("    movl %d(%%rbp), %%eax\n",
-						stack[variable_number[0] - 1].offset);
+					printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[0] - 1].offset);
 					printf("    %s %%edi, %%eax\n", op);
-					printf("    movl %%eax, %d(%%rbp)\n",
-						stack[main_variable - 1].offset);
+					printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 				}
 				else if (variable_number[1] == 2)
 				{
-					printf("    movl %d(%%rbp), %%eax\n",
-						stack[variable_number[0] - 1].offset);
+					printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[0] - 1].offset);
 					printf("    %s %%esi, %%eax\n", op);
-					printf("    movl %%eax, %d(%%rbp)\n",
-						stack[main_variable - 1].offset);
+					printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 				}
 				else
 				{
-					printf("    movl %d(%%rbp), %%eax\n",
-						stack[variable_number[0] - 1].offset);
+					printf("    movl %d(%%rbp), %%eax\n", stack[variable_number[0] - 1].offset);
 					printf("    %s %%edx, %%eax\n", op);
-					printf("    movl %%eax, %d(%%rbp)\n",
-						stack[main_variable - 1].offset);
+					printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 				}
 			}
 		}
@@ -379,19 +375,16 @@ void process_attribution()
 			{
 				if (variable_type[1] == 'c')
 				{
-					printf("    movl $%d, %%eax\n", variable_number[1]);
-					printf("    %s %%edi, %%eax\n", op);
-					printf("    movl %%eax, %d(%%rbp)\n",
-						stack[main_variable - 1].offset);
+					printf("    movl %%edi, %%eax\n");
+					printf("    %s $%d, %%eax\n", op, variable_number[1]);
+					printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 				}
 
 				if (variable_type[1] == 'v')
 				{
-					printf("    movl %d(%%rbp), %%eax\n",
-						stack[variable_number[1] - 1].offset);
-					printf("    %s %%edi, %%eax\n", op);
-					printf("    movl %%eax, %d(%%rbp)\n",
-						stack[main_variable - 1].offset);
+					printf("    movl %%edi, %%eax\n");
+					printf("    %s %d(%%rbp), %%eax\n", op, stack[variable_number[1] - 1].offset);
+					printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 				}
 				if (variable_type[1] == 'p')
 				{
@@ -399,21 +392,20 @@ void process_attribution()
 					{
 						printf("    movl %%edi, %%eax\n");
 						printf("    %s %%edi, %%eax\n", op);
-						printf("    movl %%eax, %d(%%rbp)\n",
-							stack[main_variable - 1].offset);
+						printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 					}
 					else if (variable_number[1] == 2)
 					{
 						printf("    movl %%edi, %%eax\n");
 						printf("    %s %%esi, %%eax\n", op);
-						printf("    movl %%eax, %d(%%rbp)\n",
+						printf("    movl %%eax, %d(%%rbp)\n\n",
 							stack[main_variable - 1].offset);
 					}
 					else
 					{
 						printf("    movl %%edi, %%eax\n");
 						printf("    %s %%edx, %%eax\n", op);
-						printf("    movl %%eax, %d(%%rbp)\n",
+						printf("    movl %%eax, %d(%%rbp)\n\n",
 							stack[main_variable - 1].offset);
 					}
 				}
@@ -422,19 +414,16 @@ void process_attribution()
 			{
 				if (variable_type[1] == 'c')
 				{
-					printf("    movl $%d, %%eax\n", variable_number[1]);
-					printf("    %s %%esi, %%eax\n", op);
-					printf("    movl %%eax, %d(%%rbp)\n",
-						stack[main_variable - 1].offset);
+					printf("    movl %%esi, %%eax\n");
+					printf("    %s $%d, %%eax\n", op, variable_number[1]);
+					printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 				}
 
 				if (variable_type[1] == 'v')
 				{
-					printf("    movl %d(%%rbp), %%eax\n",
-						stack[variable_number[1] - 1].offset);
-					printf("    %s %%esi, %%eax\n", op);
-					printf("    movl %%eax, %d(%%rbp)\n",
-						stack[main_variable - 1].offset);
+					printf("    movl %%esi, %%eax\n");
+					printf("    %s %d(%%rbp), %%eax\n", op, stack[variable_number[1] - 1].offset);
+					printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 				}
 				if (variable_type[1] == 'p')
 				{
@@ -442,22 +431,19 @@ void process_attribution()
 					{
 						printf("    movl %%esi, %%eax\n");
 						printf("    %s %%edi, %%eax\n", op);
-						printf("    movl %%eax, %d(%%rbp)\n",
-							stack[main_variable - 1].offset);
+						printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 					}
 					else if (variable_number[1] == 2)
 					{
 						printf("    movl %%esi, %%eax\n");
 						printf("    %s %%esi, %%eax\n", op);
-						printf("    movl %%eax, %d(%%rbp)\n",
-							stack[main_variable - 1].offset);
+						printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 					}
 					else
 					{
 						printf("    movl %%esi, %%eax\n");
 						printf("    %s %%edx, %%eax\n", op);
-						printf("    movl %%eax, %d(%%rbp)\n",
-							stack[main_variable - 1].offset);
+						printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 					}
 				}
 			}
@@ -465,19 +451,16 @@ void process_attribution()
 			{
 				if (variable_type[1] == 'c')
 				{
-					printf("    movl $%d, %%eax\n", variable_number[1]);
-					printf("    %s %%edx, %%eax\n", op);
-					printf("    movl %%eax, %d(%%rbp)\n",
-						stack[main_variable - 1].offset);
+					printf("    movl %%edx, %%eax\n");
+					printf("    %s $%d, %%eax\n", op, variable_number[1]);
+					printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 				}
 
 				if (variable_type[1] == 'v')
 				{
-					printf("    movl %d(%%rbp), %%eax\n",
-						stack[variable_number[1] - 1].offset);
-					printf("    %s %%edx, %%eax\n", op);
-					printf("    movl %%eax, %d(%%rbp)\n",
-						stack[main_variable - 1].offset);
+					printf("    movl %%edx, %%eax\n");
+					printf("    %s %d(%%rbp), %%eax\n", op, stack[variable_number[1] - 1].offset);
+					printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 				}
 				if (variable_type[1] == 'p')
 				{
@@ -485,22 +468,19 @@ void process_attribution()
 					{
 						printf("    movl %%edx, %%eax\n");
 						printf("    %s %%edi, %%eax\n", op);
-						printf("    movl %%eax, %d(%%rbp)\n",
-							stack[main_variable - 1].offset);
+						printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 					}
 					else if (variable_number[1] == 2)
 					{
 						printf("    movl %%edx, %%eax\n");
 						printf("    %s %%esi, %%eax\n", op);
-						printf("    movl %%eax, %d(%%rbp)\n",
-							stack[main_variable - 1].offset);
+						printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 					}
 					else
 					{
 						printf("    movl %%edx, %%eax\n");
 						printf("    %s %%edx, %%eax\n", op);
-						printf("    movl %%eax, %d(%%rbp)\n",
-							stack[main_variable - 1].offset);
+						printf("    movl %%eax, %d(%%rbp)\n\n", stack[main_variable - 1].offset);
 					}
 				}
 			}
@@ -520,7 +500,7 @@ void call_function()
 	int p_num[3], variable_n,
 		f_num;	// numero do parametro, numero da variavel, numero função
 	char inst[3][5];	// instrução de atribuição de parametros
-	char instp[5], type_param[3][6];	// instrução para salvar e recuperar a pilha
+	char instp[3][5], type_param[3][6];	// instrução para salvar e recuperar a pilha
 
 	matches = sscanf(buffer, "vi%d = call f%d %c%c%d %c%c%d %c%c%d", &variable_n, &f_num, &param[0], &param_t[0], &p_num[0], &param[1], &param_t[1], &p_num[1], &param[2], &param_t[2], &p_num[2]);
 
@@ -537,7 +517,7 @@ void call_function()
 			break;
 		if (parameter[i].size == 2)
 		{
-			strcpy(instp, "movq");
+			strcpy(instp[i], "movq");
 			if (i == 0)
 			{
 				strcpy(type_param[i], "%rdi");
@@ -553,7 +533,7 @@ void call_function()
 		}
 		if (parameter[i].size == 1)
 		{
-			strcpy(instp, "movl");
+			strcpy(instp[i], "movl");
 			if (i == 0)
 			{
 				strcpy(type_param[i], "%edi");
@@ -567,7 +547,7 @@ void call_function()
 				strcpy(type_param[i], "%edx");
 			}
 		}
-		printf("    %s %s, %d(%%rbp)\n", instp, type_param[i], parameter[i].offset);
+		printf("    %s %s, %d(%%rbp)\n", instp[i], type_param[i], parameter[i].offset);
 	}
 
 	printf("\n");
@@ -645,7 +625,7 @@ void call_function()
 	{
 		if (parameter[i].size == 0)
 			break;
-		printf("    %s %d(%%rbp), %s\n", instp, parameter[i].offset, type_param[i]);
+		printf("    %s %d(%%rbp), %s\n", instp[i], parameter[i].offset, type_param[i]);
 	}
 	printf("\n");
 	printf("        # Fim da chamada de função!\n");
@@ -825,10 +805,10 @@ void process_if(int current_if)
 
 	// Agora que sabemos o que temos que comparar.
 	// Vamos escrever o código de comparação.
-	
+
 	if (value_type == 'c')
 	{
-		printf("    cmp $0, $%d\n", value_index);
+		printf("    cmpl $0, $%d\n", value_index);
 	}
 	else if (value_type == 'p')
 	{
@@ -836,16 +816,22 @@ void process_if(int current_if)
 
 		switch (value_index)
 		{
-			case 1: strcpy(name_register, "edi"); break;
-			case 2: strcpy(name_register, "esi"); break;
-			case 3: strcpy(name_register, "edx"); break;
+			case 1:
+				strcpy(name_register, "edi");
+				break;
+			case 2:
+				strcpy(name_register, "esi");
+				break;
+			case 3:
+				strcpy(name_register, "edx");
+				break;
 		}
 
-		printf("    cmp $0, %%%s\n", name_register);
+		printf("    cmpl $0, %%%s\n", name_register);
 	}
 	else	// value_type == 'v'
 	{
-		printf("    cmp $0, %d(%%rbp)\n", stack[value_index - 1].offset);
+		printf("    cmpl $0, %d(%%rbp)\n", stack[value_index - 1].offset);
 	}
 
 	// Agora que comparamos o valor fornecido.
@@ -864,7 +850,7 @@ void process_if(int current_if)
 	if (strncmp(buffer, "set", 2) == 0)
 		process_vector_setter();
 	if (strncmp(buffer, "return", 6) == 0)
-			process_return();
+		process_return();
 
 	// E por fim, precisamos do label do fim do if
 	read_line();
@@ -912,6 +898,4 @@ void process_return()
 
 	printf("    leave\n");
 	printf("    ret\n\n");
-
-	current_function = -1;
 }

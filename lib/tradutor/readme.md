@@ -119,9 +119,8 @@ Como o operador de instruções matemáticas vem no meio da expressão, pode ser
 2. Verificar se após `variavel1` há uma quebra de linha ou um operador
    * Caso haja uma quebra de linha, vá para o último passo
 
-3. Aplicar a operação matemática correta e guardar o seu resultado no registrador
-   * PS: Buscar o valor de `variavel2` da memória
-5. Utilizar o valor dentro do registrador.
+3. Aplicar a operação matemática correta naquele registrador e guardar o seu resultado no próprio registrador
+4. Utilizar o valor dentro do registrador.
 
 ## Comando - Atribuição
 
