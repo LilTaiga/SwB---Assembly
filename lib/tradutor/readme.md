@@ -4,18 +4,18 @@
 
 - [x] Funções
 - [x] Definição de variáveis
-- [ ] Operações
-  - [ ] Atribuição
-    - [ ] Atribuição simples
-    - [ ] Soma
-    - [ ] Subtração
-    - [ ] Multiplicação
-    - [ ] Divisão
-    - [ ] Chamada de função
+- [x] Operações
+  - [x] Atribuição
+    - [x] Atribuição simples
+    - [x] Soma
+    - [x] Subtração
+    - [x] Multiplicação
+    - [x] Divisão
+    - [x] Chamada de função
   - [x] Acesso a arrays
     - [x] Leitura
     - [x] Escrita
-  - [ ] Condicional if
+  - [x] Condicional if
   - [x] Retorno
 
 ## Funções
